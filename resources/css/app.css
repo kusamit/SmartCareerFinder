@@ -1,0 +1,117 @@
+@import 'tailwindcss';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+@source '../**/*.blade.php';
+@source '../**/*.js';
+
+@theme {
+    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+        'Segoe UI Symbol', 'Noto Color Emoji';
+}
+
+/*
+  Professional UI theme
+  - 60% white (light)
+  - 15% dark blue
+  - 15% black
+  - 5% orange
+  - 5% green
+
+  Usage: toggle <html data-theme="dark"> (implemented in layouts/app.blade.php)
+*/
+
+:root {
+  --c-white: #ffffff;
+  --c-black: #0b1220;
+  --c-darkblue: #0f2a5a;
+  --c-orange: #f59e0b;
+  --c-green: #22c55e;
+
+  --bg: #f6f8fb;            /* mostly white */
+  --surface: rgba(15, 42, 90, 0.04);
+  --text: #0b1220;
+  --muted: rgba(11, 18, 32, 0.65);
+  --border: rgba(15, 42, 90, 0.18);
+
+  --primary: #1d4ed8;     /* indigo/darkblue-ish */
+  --primary-strong: #123f9c;
+  --focus: rgba(29, 78, 216, 0.35);
+
+  --success-bg: rgba(34, 197, 94, 0.12);
+  --success-border: rgba(34, 197, 94, 0.35);
+  --success-text: #15803d;
+
+  --error-bg: rgba(245, 158, 11, 0.12);
+  --error-border: rgba(245, 158, 11, 0.35);
+  --error-text: #b45309;
+
+  --input-bg: #ffffff;
+  --input-border: rgba(15, 42, 90, 0.28);
+  --input-text: #000000; /* requested: input filed color should be black */
+  --placeholder: rgba(11, 18, 32, 0.45);
+}
+
+html[data-theme="dark"] {
+  --bg: #0b1220;           /* black */
+  --surface: rgba(255, 255, 255, 0.06);
+  --text: rgba(255, 255, 255, 0.92);
+  --muted: rgba(255, 255, 255, 0.65);
+  --border: rgba(255, 255, 255, 0.12);
+
+  --primary: #60a5fa;     /* brighter for dark */
+  --primary-strong: #3b82f6;
+  --focus: rgba(96, 165, 250, 0.35);
+
+  --success-bg: rgba(34, 197, 94, 0.15);
+  --success-border: rgba(34, 197, 94, 0.35);
+  --success-text: rgba(74, 222, 128, 0.95);
+
+  --error-bg: rgba(245, 158, 11, 0.18);
+  --error-border: rgba(245, 158, 11, 0.35);
+  --error-text: rgba(251, 146, 60, 0.98);
+
+  --input-bg: rgba(255, 255, 255, 0.06);
+  --input-border: rgba(255, 255, 255, 0.18);
+  --input-text: #000000; /* keep black text per request */
+  --placeholder: rgba(255, 255, 255, 0.55);
+}
+
+/* Base */
+html, body {
+  background: var(--bg);
+  color: var(--text);
+}
+
+a { color: var(--primary); }
+a:hover { color: var(--primary-strong); }
+
+/* Inputs (align/clean/user-friendly) */
+input, textarea, select {
+  width: 100%;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: 12px;
+  padding: 12px 14px;
+  color: var(--input-text);
+  outline: none;
+  transition: box-shadow 160ms ease, border-color 160ms ease;
+}
+
+input::placeholder, textarea::placeholder {
+  color: var(--placeholder);
+}
+
+input:focus, textarea:focus, select:focus {
+  border-color: rgba(29, 78, 216, 0.45);
+  box-shadow: 0 0 0 4px var(--focus);
+}
+
+/* Tailwind-compatible helper classes */
+.text-muted { color: var(--muted); }
+.card-surface { background: var(--surface); border: 1px solid var(--border); }
+
+/* Smooth load */
+.fade-up { animation: fadeUp 0.5s ease forwards; }
+@keyframes fadeUp { from { opacity:0; transform: translateY(12px);} to { opacity:1; transform: translateY(0);} }
+
