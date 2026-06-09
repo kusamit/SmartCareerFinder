@@ -1,5 +1,5 @@
-# JobBridge — Smart Job Portal System
-
+Smart Career Finder
+A Job Portal
 A Laravel-based job portal with role-based access, CV upload, and intelligent job matching.
 
 ## Features

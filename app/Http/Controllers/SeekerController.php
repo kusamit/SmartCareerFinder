@@ -17,11 +17,42 @@ class SeekerController extends Controller
 
     public function dashboard()
     {
-        $user         = $this->authUser();
+        $user = $this->authUser();
+        // Compute total open jobs for stats
+        $totalJobs = \App\Models\Job::where('status', 'open')->count();
+        // Recent applications for the seeker
         $applications = $user->applications()->with('job')->latest()->take(5)->get();
-        $totalJobs    = Job::where('status', 'open')->count();
+        // Gather data for visualizations
+        // Application status breakdown for doughnut chart
+        $statusCounts = $user->applications()
+            ->selectRaw('status, COUNT(*) as cnt')
+            ->groupBy('status')
+            ->pluck('cnt', 'status')
+            ->toArray();
 
-        return view('seeker.dashboard', compact('user', 'applications', 'totalJobs'));
+        // Match scores from recent applications for histogram/bar chart
+        $matchScores = $user->applications()
+            ->orderByDesc('created_at')
+            ->limit(20)
+            ->pluck('match_score')
+            ->toArray();
+
+        // Recent activity timeline (application dates)
+        $recentActivity = $user->applications()
+            ->orderByDesc('created_at')
+            ->limit(10)
+            ->get(['id', 'job_id', 'created_at', 'status'])
+            ->toArray();
+
+        // Profile completeness percentage (simple heuristic)
+        $filled = 0;
+        $fields = ['name','skills','education','experience_years','preferred_role','location','profile_summary'];
+        foreach ($fields as $f) {
+            if (!empty($user->$f)) $filled++;
+        }
+        $profileCompleteness = intval(($filled / count($fields)) * 100);
+
+        return view('seeker.dashboard', compact('user', 'totalJobs', 'applications', 'statusCounts', 'matchScores', 'recentActivity', 'profileCompleteness'));
     }
 
     public function profile()
@@ -51,19 +82,36 @@ class SeekerController extends Controller
         $user->profile_summary = $user->generateProfileSummary();
         $user->save();
 
+        // Python embedding and index update
+        $userText = $user->profile_summary . ' ' . $user->skills . ' ' . $user->preferred_role . ' ' . $user->location . ' ' . $user->education;
+        $escapedText = escapeshellarg($userText);
+        $userId = escapeshellarg($user->id);
+        $scriptPath = escapeshellarg(base_path('python/match.py'));
+        shell_exec("python {$scriptPath} --embed-user --id {$userId} --text {$escapedText}");
+        shell_exec("python {$scriptPath} --index");
+
         return back()->with('success', 'Profile updated! Your job matches have been refreshed.');
     }
 
     public function jobs(Request $request)
     {
         $user = $this->authUser();
-
-        // Step 3-6: Preprocess + Match using profile text
         $jobs = Job::where('status', 'open')->get();
 
-        // Score each job against the seeker profile
-        $scored = $jobs->map(function ($job) use ($user) {
-            $job->match_score = $user->matchScore($job);
+        // Fetch matches from Python FAISS index
+        $scriptPath = escapeshellarg(base_path('python/match.py'));
+        $cmd = "python {$scriptPath} --search-jobs --id " . escapeshellarg($user->id);
+        $output = shell_exec($cmd);
+        $scores = json_decode($output, true) ?? [];
+
+        $scoreMap = [];
+        foreach ($scores as $s) {
+            $scoreMap[$s['job_id']] = $s['score'];
+        }
+
+        // Score each job, default to 0 if not retrieved by FAISS
+        $scored = $jobs->map(function ($job) use ($scoreMap) {
+            $job->match_score = $scoreMap[$job->id] ?? 0;
             return $job;
         })->sortByDesc('match_score')->values();
 
@@ -91,7 +139,6 @@ class SeekerController extends Controller
             $cvText = file_get_contents($file->getRealPath());
         } else {
             // For PDF/DOC, we simulate extraction from filename + user's existing profile
-            // In production: integrate pdf-parser or call an API
             $cvText = $user->profile_summary . ' ' . $user->skills;
         }
 
@@ -103,16 +150,21 @@ class SeekerController extends Controller
 
         $user->save();
 
-        // Match jobs (Step 6: Query FAISS-like matching)
-        $jobs = Job::where('status', 'open')->get();
-        $scored = $jobs->map(function ($job) use ($cvText) {
-            $jobText  = strtolower($job->title . ' ' . $job->key_skills . ' ' . $job->requirements);
-            $jobWords = array_filter(preg_split('/[\s,;]+/', $jobText));
-            $cvWords  = array_filter(preg_split('/\s+/', $cvText));
+        // Search matching jobs by CV text using Python
+        $escapedCvText = escapeshellarg($cvText);
+        $scriptPath = escapeshellarg(base_path('python/match.py'));
+        $cmd = "python {$scriptPath} --search-cv --text {$escapedCvText}";
+        $output = shell_exec($cmd);
+        $scores = json_decode($output, true) ?? [];
 
-            $overlap   = count(array_intersect($cvWords, $jobWords));
-            $score     = $jobWords ? min(100, intval(($overlap / count($jobWords)) * 120)) : 0;
-            $job->match_score = $score;
+        $scoreMap = [];
+        foreach ($scores as $s) {
+            $scoreMap[$s['job_id']] = $s['score'];
+        }
+
+        $jobs = Job::where('status', 'open')->get();
+        $scored = $jobs->map(function ($job) use ($scoreMap) {
+            $job->match_score = $scoreMap[$job->id] ?? 0;
             return $job;
         })->sortByDesc('match_score')->values();
 
@@ -143,7 +195,28 @@ class SeekerController extends Controller
 
     public function applications()
     {
-        $user         = $this->authUser();
+        $user = $this->authUser();
+        // Visualization data
+        $statusCounts = $user->applications()
+            ->selectRaw('status, COUNT(*) as cnt')
+            ->groupBy('status')
+            ->pluck('cnt', 'status')
+            ->toArray();
+
+        $matchScores = $user->applications()
+            ->orderByDesc('created_at')
+            ->limit(20)
+            ->pluck('match_score')
+            ->toArray();
+
+        $recentActivity = $user->applications()
+            ->orderByDesc('created_at')
+            ->limit(10)
+            ->get(['id', 'job_id', 'created_at', 'status'])
+            ->toArray();
+
+        $profileCompleteness = (int)($user->profile_summary ? 100 : 0);
+
         $applications = $user->applications()->with('job')->latest()->get();
         return view('seeker.applications', compact('user', 'applications'));
     }

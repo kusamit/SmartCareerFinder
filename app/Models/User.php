@@ -52,37 +52,49 @@ class User extends Model
             . "Looking for {$role} based in {$loc}.";
     }
 
-    // Simple keyword-based matching score against a job (0-100)
+    // Vector-based matching score against a job (0-100) using FAISS index
     public function matchScore(Job $job): int
     {
-        $profileText = strtolower($this->profile_summary . ' ' . $this->skills . ' ' . $this->preferred_role);
-        $jobText     = strtolower($job->title . ' ' . $job->key_skills . ' ' . $job->description . ' ' . $job->requirements);
+        $userId = $this->id;
+        $jobId = $job->id;
+        $scriptPath = escapeshellarg(base_path('python/match.py'));
 
-        // Tokenize
-        $profileWords = array_filter(preg_split('/[\s,;]+/', $profileText));
-        $jobWords     = array_filter(preg_split('/[\s,;]+/', $jobText));
+        // Call python script to query matching jobs for this user
+        $cmd = "python {$scriptPath} --search-jobs --id " . escapeshellarg($userId);
+        $output = shell_exec($cmd);
+        $results = json_decode($output, true);
 
-        if (empty($profileWords) || empty($jobWords)) return 0;
-
-        // Skill overlap
-        $overlap     = count(array_intersect($profileWords, $jobWords));
-        $skillScore  = min(60, intval(($overlap / count($jobWords)) * 100));
-
-        // Experience match
-        $expScore = 0;
-        if ($this->experience_years !== null && $job->experience_required) {
-            preg_match('/\d+/', $job->experience_required, $m);
-            $reqExp = isset($m[0]) ? (int)$m[0] : 0;
-            $expScore = $this->experience_years >= $reqExp ? 20 : max(0, 20 - ($reqExp - $this->experience_years) * 5);
+        if (is_array($results)) {
+            foreach ($results as $res) {
+                if ($res['job_id'] == $jobId) {
+                    return $res['score'];
+                }
+            }
         }
 
-        // Location match
-        $locScore = 0;
-        if ($this->location && $job->location) {
-            similar_text(strtolower($this->location), strtolower($job->location), $pct);
-            $locScore = intval($pct / 5); // max 20
+        // Fallback: if user or job vector is missing, embed both and index
+        $profileText = $this->profile_summary . ' ' . $this->skills . ' ' . $this->preferred_role . ' ' . $this->location . ' ' . $this->education;
+        $escapedUserText = escapeshellarg($profileText);
+        shell_exec("python {$scriptPath} --embed-user --id {$userId} --text {$escapedUserText}");
+
+        $jobText = $job->title . ' ' . $job->key_skills . ' ' . $job->description . ' ' . $job->requirements . ' ' . $job->location . ' ' . $job->experience_required;
+        $escapedJobText = escapeshellarg($jobText);
+        shell_exec("python {$scriptPath} --embed-job --id {$jobId} --text {$escapedJobText}");
+
+        // Rebuild index
+        shell_exec("python {$scriptPath} --index");
+
+        // Retry search
+        $output = shell_exec($cmd);
+        $results = json_decode($output, true);
+        if (is_array($results)) {
+            foreach ($results as $res) {
+                if ($res['job_id'] == $jobId) {
+                    return $res['score'];
+                }
+            }
         }
 
-        return min(100, $skillScore + $expScore + $locScore);
+        return 0;
     }
 }

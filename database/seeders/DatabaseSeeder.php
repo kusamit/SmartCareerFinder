@@ -98,9 +98,24 @@ class DatabaseSeeder extends Seeder
             ],
         ];
 
+        // Embed Seeker in Vector Database
+        $scriptPath = escapeshellarg(base_path('python/match.py'));
+        $seekerText = $seeker->profile_summary . ' ' . $seeker->skills . ' ' . $seeker->preferred_role . ' ' . $seeker->location . ' ' . $seeker->education;
+        $escapedText = escapeshellarg($seekerText);
+        $seekerId = escapeshellarg($seeker->id);
+        shell_exec("python {$scriptPath} --embed-user --id {$seekerId} --text {$escapedText}");
+
+        // Embed Jobs in Vector Database
         foreach ($jobs as $jobData) {
-            Job::create(array_merge($jobData, ['user_id' => $provider->id, 'company' => $provider->company_name]));
+            $job = Job::create(array_merge($jobData, ['user_id' => $provider->id, 'company' => $provider->company_name]));
+            $jobText = $job->title . ' ' . $job->key_skills . ' ' . $job->description . ' ' . $job->requirements . ' ' . $job->location . ' ' . $job->experience_required;
+            $escapedJobText = escapeshellarg($jobText);
+            $jobId = escapeshellarg($job->id);
+            shell_exec("python {$scriptPath} --embed-job --id {$jobId} --text {$escapedJobText}");
         }
+
+        // Compile IVF-Flat FAISS Index
+        shell_exec("python {$scriptPath} --index");
 
         echo "✅ Seeded: provider@demo.com / seeker@demo.com (password: password)\n";
     }

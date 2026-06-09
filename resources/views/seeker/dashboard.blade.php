@@ -43,6 +43,27 @@
         </div>
     </div>
 
+    <div class="card p-6 mb-8">
+        <canvas id="applicationChart" height="100"></canvas>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        const ctx = document.getElementById('applicationChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                datasets: [{
+                    label: 'Applications',
+                    data: [12, 19, 3, 5, 2, 3],
+                    borderColor: '#6366f1',
+                    tension: 0.4
+                }]
+            }
+        });
+    </script>
+
     <div class="grid lg:grid-cols-3 gap-6">
         {{-- Recent Applications --}}
         <div class="lg:col-span-2">
