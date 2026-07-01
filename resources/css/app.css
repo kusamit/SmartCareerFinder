@@ -71,10 +71,10 @@ html[data-theme="dark"] {
   --error-border: rgba(245, 158, 11, 0.35);
   --error-text: rgba(251, 146, 60, 0.98);
 
-  --input-bg: rgba(255, 255, 255, 0.06);
-  --input-border: rgba(255, 255, 255, 0.18);
+  --input-bg: #ffffff;
+  --input-border: rgba(255, 255, 255, 0.35);
   --input-text: #000000; /* keep black text per request */
-  --placeholder: rgba(255, 255, 255, 0.55);
+  --placeholder: rgba(11, 18, 32, 0.45);
 }
 
 /* Base */
@@ -107,6 +107,78 @@ input:focus, textarea:focus, select:focus {
   box-shadow: 0 0 0 4px var(--focus);
 }
 
+/* Custom layout classes */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+}
+
+.label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 20px;
+  background: var(--primary);
+  color: #ffffff !important;
+  font-weight: 600;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  border: none;
+}
+
+.btn-primary:hover {
+  background: var(--primary-strong);
+  transform: translateY(-1px);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+.btn-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 20px;
+  background: transparent;
+  border: 1.5px solid var(--border);
+  color: var(--text) !important;
+  font-weight: 600;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.btn-outline:hover {
+  background: var(--surface);
+  border-color: var(--muted);
+  transform: translateY(-1px);
+}
+
+.btn-outline:active {
+  transform: translateY(0);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 8px;
+}
+
 /* Tailwind-compatible helper classes */
 .text-muted { color: var(--muted); }
 .card-surface { background: var(--surface); border: 1px solid var(--border); }
@@ -115,3 +187,44 @@ input:focus, textarea:focus, select:focus {
 .fade-up { animation: fadeUp 0.5s ease forwards; }
 @keyframes fadeUp { from { opacity:0; transform: translateY(12px);} to { opacity:1; transform: translateY(0);} }
 
+/* Match score progress bar */
+.match-bar {
+  height: 5px;
+  background: rgba(100, 116, 139, 0.2);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.match-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.5s ease;
+}
+
+/* Quill rendered content display (show.blade.php) */
+.ql-editor-display p { margin-bottom: 0.75em; }
+.ql-editor-display ul {
+  list-style-type: disc;
+  padding-left: 1.5em;
+  margin-bottom: 0.75em;
+}
+.ql-editor-display ol {
+  list-style-type: decimal;
+  padding-left: 1.5em;
+  margin-bottom: 0.75em;
+}
+.ql-editor-display li { margin-bottom: 0.3em; }
+.ql-editor-display strong { font-weight: 700; }
+.ql-editor-display em { font-style: italic; }
+.ql-editor-display u { text-decoration: underline; }
+.ql-editor-display h1 {
+  font-size: 1.4em;
+  font-weight: 700;
+  margin-top: 1em;
+  margin-bottom: 0.4em;
+}
+.ql-editor-display h2 {
+  font-size: 1.2em;
+  font-weight: 700;
+  margin-top: 0.8em;
+  margin-bottom: 0.35em;
+}

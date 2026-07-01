@@ -109,9 +109,12 @@ class SeekerController extends Controller
             $scoreMap[$s['job_id']] = $s['score'];
         }
 
-        // Score each job, default to 0 if not retrieved by FAISS
-        $scored = $jobs->map(function ($job) use ($scoreMap) {
-            $job->match_score = $scoreMap[$job->id] ?? 0;
+        // Score each job: FAISS base × 60% + location(15) + portfolio(10) + domain(15)
+        $scored = $jobs->map(function ($job) use ($scoreMap, $user) {
+            $faissScore        = $scoreMap[$job->id] ?? 0;
+            $comp              = $user->compositeScore($job, $faissScore);
+            $job->match_score  = $comp['final_score'];
+            $job->match_composite = $comp;          // available in view
             return $job;
         })->sortByDesc('match_score')->values();
 
@@ -163,8 +166,11 @@ class SeekerController extends Controller
         }
 
         $jobs = Job::where('status', 'open')->get();
-        $scored = $jobs->map(function ($job) use ($scoreMap) {
-            $job->match_score = $scoreMap[$job->id] ?? 0;
+        $scored = $jobs->map(function ($job) use ($scoreMap, $user) {
+            $faissScore        = $scoreMap[$job->id] ?? 0;
+            $comp              = $user->compositeScore($job, $faissScore);
+            $job->match_score  = $comp['final_score'];
+            $job->match_composite = $comp;
             return $job;
         })->sortByDesc('match_score')->values();
 
@@ -184,13 +190,17 @@ class SeekerController extends Controller
             return back()->with('error', 'You have already applied for this job.');
         }
 
+        // Composite score: FAISS × 60% + location + portfolio + domain bonuses
+        $faissScore = $user->matchScore($job);
+        $composite  = $user->compositeScore($job, $faissScore);
+
         Application::create([
             'job_id'      => $job->id,
             'user_id'     => $user->id,
-            'match_score' => $user->matchScore($job),
+            'match_score' => $composite['final_score'],
         ]);
 
-        return back()->with('success', "Applied to {$job->title} successfully!");
+        return back()->with('success', "Applied to {$job->title} successfully! Your composite match score is {$composite['final_score']}%.");
     }
 
     public function applications()

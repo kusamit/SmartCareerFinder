@@ -40,4 +40,5 @@ Route::middleware('auth.provider')->prefix('provider')->name('provider.')->group
     Route::patch('/jobs/{job}/status', [ProviderController::class, 'toggleStatus'])->name('jobs.status');
     Route::delete('/jobs/{job}', [ProviderController::class, 'destroy'])->name('jobs.destroy');
     Route::get('/jobs/{job}/applicants', [ProviderController::class, 'applicants'])->name('jobs.applicants');
+    Route::get('/applicants', [ProviderController::class, 'allApplicants'])->name('all_applicants');
 });

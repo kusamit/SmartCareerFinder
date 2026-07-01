@@ -7,69 +7,208 @@
 <a href="{{ route('provider.jobs.create') }}" class="nav-link">Post Job</a>
 @endsection
 
+@push('styles')
+<style>
+    body { background: #f1f4f9 !important; }
+
+    /* ===== PAGE HEADER ===== */
+    .page-header {
+        display: flex; align-items: center; justify-content: space-between;
+        margin-bottom: 28px;
+    }
+    .page-title { font-size: 26px; font-weight: 800; color: #0f172a; letter-spacing: -0.4px; }
+    .page-sub   { font-size: 13px; color: #64748b; margin-top: 2px; }
+
+    /* ===== STAT CARDS ===== */
+    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 32px; }
+    @media (max-width: 768px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
+
+    .stat-card {
+        background: #fff;
+        border-radius: 20px;
+        padding: 22px 24px;
+        border: 1.5px solid #f1f5f9;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+        position: relative;
+        overflow: hidden;
+        transition: transform 0.2s, box-shadow 0.2s;
+        text-decoration: none;
+        display: block;
+    }
+    .stat-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,0.09); }
+    .stat-card::before {
+        content: '';
+        position: absolute; top: 0; left: 0;
+        width: 4px; height: 100%;
+    }
+    .stat-card.indigo::before { background: linear-gradient(180deg, #6366f1, #8b5cf6); }
+    .stat-card.emerald::before { background: linear-gradient(180deg, #10b981, #059669); }
+    .stat-card.rose::before { background: linear-gradient(180deg, #f43f5e, #be123c); }
+    .stat-card.amber::before { background: linear-gradient(180deg, #f59e0b, #d97706); }
+
+    .stat-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: #94a3b8; margin-bottom: 10px; }
+    .stat-value { font-size: 36px; font-weight: 800; letter-spacing: -1px; line-height: 1; }
+    .stat-card.indigo .stat-value { color: #4f46e5; }
+    .stat-card.emerald .stat-value { color: #059669; }
+    .stat-card.rose .stat-value { color: #e11d48; }
+    .stat-card.amber .stat-value { color: #d97706; }
+
+
+    /* ===== SECTION HEADER ===== */
+    .section-header {
+        display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;
+    }
+    .section-title { font-size: 16px; font-weight: 700; color: #0f172a; }
+
+    /* ===== JOB ROW ===== */
+    .job-row {
+        background: #fff;
+        border: 1.5px solid #f1f5f9;
+        border-radius: 16px;
+        padding: 18px 20px;
+        margin-bottom: 10px;
+        display: flex; align-items: center; gap: 16px;
+        transition: all 0.2s ease;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    }
+    .job-row:hover { border-color: #c7d2fe; box-shadow: 0 4px 16px rgba(99,102,241,0.1); transform: translateY(-1px); }
+
+    .job-row-left { flex: 1; min-width: 0; }
+    .job-row-title { font-size: 15px; font-weight: 700; color: #0f172a; }
+    .job-row-meta { font-size: 12px; color: #94a3b8; margin-top: 3px; }
+
+    .job-row-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+
+    /* ===== STATUS BADGES ===== */
+    .status-open {
+        display: inline-flex; align-items: center; gap: 5px;
+        padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 700;
+        background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0;
+    }
+    .status-open::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: #16a34a; }
+    .status-closed {
+        display: inline-flex; align-items: center; gap: 5px;
+        padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 700;
+        background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca;
+    }
+    .status-closed::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: #dc2626; }
+
+    .type-badge {
+        display: inline-flex; padding: 3px 10px; border-radius: 999px;
+        font-size: 11px; font-weight: 600;
+        background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0;
+        text-transform: capitalize;
+    }
+
+    /* ===== ACTION BUTTONS ===== */
+    .btn-action {
+        display: inline-flex; align-items: center; padding: 6px 14px;
+        border: 1.5px solid #e2e8f0; border-radius: 10px;
+        font-size: 12px; font-weight: 600; color: #475569;
+        background: #fff; cursor: pointer; text-decoration: none;
+        transition: all 0.2s;
+    }
+    .btn-action:hover { border-color: #6366f1; color: #4f46e5; background: #f5f3ff; }
+
+    .btn-action-danger:hover { border-color: #fca5a5; color: #dc2626; background: #fef2f2; }
+    .btn-action-success:hover { border-color: #6ee7b7; color: #059669; background: #ecfdf5; }
+
+    /* ===== POST BTN ===== */
+    .btn-post {
+        display: inline-flex; align-items: center; gap: 6px;
+        padding: 11px 20px;
+        background: linear-gradient(135deg, #4f46e5, #7c3aed);
+        color: #fff; font-weight: 700; font-size: 14px;
+        border-radius: 12px; border: none; cursor: pointer; text-decoration: none;
+        transition: all 0.25s; box-shadow: 0 6px 20px rgba(79,70,229,0.3);
+    }
+    .btn-post:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(79,70,229,0.4); color: #fff; }
+
+    /* ===== EMPTY STATE ===== */
+    .empty-state {
+        background: #fff; border: 2px dashed #e2e8f0; border-radius: 20px;
+        padding: 60px 24px; text-align: center;
+    }
+    .empty-state h3 { font-size: 18px; font-weight: 700; color: #0f172a; margin-bottom: 8px; }
+    .empty-state p  { font-size: 13px; color: #94a3b8; margin-bottom: 20px; }
+</style>
+@endpush
+
 @section('content')
 <div class="fade-up">
-    <div class="flex items-center justify-between mb-8">
+
+    {{-- ===== PAGE HEADER ===== --}}
+    <div class="page-header">
         <div>
-            <h1 class="text-2xl font-bold">Provider Dashboard</h1>
-            <p class="text-slate-400 text-sm">{{ $user->company_name ?? $user->name }}</p>
+            <div class="page-title">Provider Dashboard</div>
+            <div class="page-sub">{{ $user->company_name ?? $user->name }}</div>
         </div>
-        <a href="{{ route('provider.jobs.create') }}" class="btn-primary">+ Post New Job</a>
+        <a href="{{ route('provider.jobs.create') }}" class="btn-post">+ Post New Job</a>
     </div>
 
-    {{-- Stats --}}
-    <div class="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-        <div class="card p-5">
-            <div class="text-slate-400 text-xs uppercase tracking-widest mb-1">Total Jobs</div>
-            <div class="text-3xl font-bold text-indigo-400">{{ $totalJobs }}</div>
-        </div>
-        <div class="card p-5">
-            <div class="text-slate-400 text-xs uppercase tracking-widest mb-1">Open Jobs</div>
-            <div class="text-3xl font-bold text-emerald-400">{{ $openJobs }}</div>
-        </div>
-        <div class="card p-5">
-            <div class="text-slate-400 text-xs uppercase tracking-widest mb-1">Total Applicants</div>
-            <div class="text-3xl font-bold text-amber-400">{{ $totalApps }}</div>
-        </div>
+    {{-- ===== STAT CARDS ===== --}}
+    <div class="stats-grid">
+        <a href="{{ route('provider.jobs') }}" class="stat-card indigo">
+            <div class="stat-label">Total Jobs</div>
+            <div class="stat-value">{{ $totalJobs }}</div>
+        </a>
+        <a href="{{ route('provider.jobs', ['status' => 'open']) }}" class="stat-card emerald">
+            <div class="stat-label">Open Jobs</div>
+            <div class="stat-value">{{ $openJobs }}</div>
+        </a>
+        <a href="{{ route('provider.jobs', ['status' => 'closed']) }}" class="stat-card rose">
+            <div class="stat-label">Closed Jobs</div>
+            <div class="stat-value">{{ $closedJobs }}</div>
+        </a>
+        <a href="{{ route('provider.all_applicants') }}" class="stat-card amber">
+            <div class="stat-label">Total Applicants</div>
+            <div class="stat-value">{{ $totalApps }}</div>
+        </a>
     </div>
 
-    {{-- Recent Jobs --}}
-    <h2 class="text-lg font-semibold mb-4">Recent Job Postings</h2>
+
+    {{-- ===== RECENT JOBS ===== --}}
+    <div class="section-header">
+        <div class="section-title">Recent Job Postings</div>
+        <a href="{{ route('provider.jobs') }}" style="font-size:13px; color:#6366f1; font-weight:600; text-decoration:none;">View all →</a>
+    </div>
+
     @forelse($jobs as $job)
-    <div class="card p-5 mb-3 flex items-center gap-4 hover:border-slate-600 transition-all">
-        <div class="flex-1 min-w-0">
-            <div class="flex items-center gap-2 flex-wrap">
-                <span class="font-semibold">{{ $job->title }}</span>
-                <span class="badge {{ $job->isOpen() ? 'bg-emerald-900/50 text-emerald-300' : 'bg-red-900/50 text-red-300' }}">
-                    {{ $job->status }}
-                </span>
-                <span class="badge bg-slate-700 text-slate-400 capitalize">{{ $job->type }}</span>
+    <div class="job-row">
+        <div class="job-row-left">
+            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:4px;">
+                <span class="job-row-title">{{ $job->title }}</span>
+                @if($job->isOpen())
+                    <span class="status-open">Open</span>
+                @else
+                    <span class="status-closed">Closed</span>
+                @endif
+                <span class="type-badge">{{ $job->type }}</span>
             </div>
-            <div class="text-slate-400 text-xs mt-1">📍 {{ $job->location }} · {{ $job->applications_count }} applicant(s) · {{ $job->created_at->diffForHumans() }}</div>
+            <div class="job-row-meta">
+                {{ $job->location }} &nbsp;·&nbsp; {{ $job->applications_count }} applicant(s) &nbsp;·&nbsp; {{ $job->created_at->diffForHumans() }}
+            </div>
         </div>
-        <div class="flex items-center gap-2 shrink-0">
-            <a href="{{ route('provider.jobs.applicants', $job->id) }}" class="btn-outline text-xs py-1.5 px-3">Applicants</a>
-            <a href="{{ route('provider.jobs.edit', $job->id) }}" class="btn-outline text-xs py-1.5 px-3">Edit</a>
-            <form method="POST" action="{{ route('provider.jobs.status', $job->id) }}">
+        <div class="job-row-actions">
+            <a href="{{ route('provider.jobs.applicants', $job->id) }}" class="btn-action">Applicants</a>
+            <a href="{{ route('provider.jobs.edit', $job->id) }}" class="btn-action">Edit</a>
+            <form method="POST" action="{{ route('provider.jobs.status', $job->id) }}" style="display:inline">
                 @csrf @method('PATCH')
-                <button class="btn-outline text-xs py-1.5 px-3 {{ $job->isOpen() ? 'text-red-400 border-red-800 hover:border-red-500' : 'text-emerald-400 border-emerald-800 hover:border-emerald-500' }}">
+                <button class="btn-action {{ $job->isOpen() ? 'btn-action-danger' : 'btn-action-success' }}">
                     {{ $job->isOpen() ? 'Close' : 'Open' }}
                 </button>
             </form>
         </div>
     </div>
     @empty
-    <div class="card p-16 text-center">
-        <div class="text-5xl mb-4">📢</div>
-        <h3 class="text-xl font-semibold mb-2">No jobs posted yet</h3>
-        <a href="{{ route('provider.jobs.create') }}" class="btn-primary inline-flex">Post Your First Job</a>
+    <div class="empty-state">
+        <h3>No jobs posted yet</h3>
+        <p>Start attracting top talent by posting your first job opening.</p>
+        <a href="{{ route('provider.jobs.create') }}" class="btn-post" style="display:inline-flex;">Post Your First Job</a>
     </div>
     @endforelse
 
-    @if($jobs->count() > 0)
-    <div class="mt-2 text-right">
-        <a href="{{ route('provider.jobs') }}" class="text-indigo-400 text-sm hover:underline">View all jobs →</a>
-    </div>
-    @endif
 </div>
 @endsection
+
+

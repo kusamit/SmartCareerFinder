@@ -55,18 +55,27 @@ class ProviderController extends Controller
         $jobs      = $user->postedJobs()->withCount('applications')->latest()->take(5)->get();
         $totalJobs = $user->postedJobs()->count();
         $openJobs  = $user->postedJobs()->where('status', 'open')->count();
+        $closedJobs = $user->postedJobs()->where('status', 'closed')->count();
         $totalApps = Application::whereIn('job_id', $user->postedJobs()->pluck('id'))->count();
 
-        return view('provider.dashboard', compact('user', 'jobs', 'totalJobs', 'openJobs', 'totalApps', 'applicantsPerJob', 'statusBreakdown', 'topSkills'));
+        return view('provider.dashboard', compact('user', 'jobs', 'totalJobs', 'openJobs', 'closedJobs', 'totalApps', 'applicantsPerJob', 'statusBreakdown', 'topSkills'));
 
     }
 
-    public function jobs()
+    public function jobs(Request $request)
     {
         $user = $this->authUser();
-        $jobs = $user->postedJobs()->withCount('applications')->latest()->get();
+        $query = $user->postedJobs()->withCount('applications')->latest();
+        if ($request->has('status')) {
+            $status = $request->status;
+            if (in_array($status, ['open', 'closed'])) {
+                $query->where('status', $status);
+            }
+        }
+        $jobs = $query->get();
         return view('provider.jobs', compact('user', 'jobs'));
     }
+
 
     public function create()
     {
@@ -95,7 +104,7 @@ class ProviderController extends Controller
         $job = Job::create($data);
 
         // Python embedding and index update
-        $jobText = $job->title . ' ' . $job->key_skills . ' ' . $job->description . ' ' . $job->requirements . ' ' . $job->location . ' ' . $job->experience_required;
+        $jobText = $job->title . ' ' . strip_tags($job->key_skills) . ' ' . strip_tags($job->description) . ' ' . strip_tags($job->requirements) . ' ' . $job->location . ' ' . $job->experience_required;
         $escapedText = escapeshellarg($jobText);
         $jobId = escapeshellarg($job->id);
         $scriptPath = escapeshellarg(base_path('python/match.py'));
@@ -131,7 +140,7 @@ class ProviderController extends Controller
         $job->update($data);
 
         // Python embedding and index update
-        $jobText = $job->title . ' ' . $job->key_skills . ' ' . $job->description . ' ' . $job->requirements . ' ' . $job->location . ' ' . $job->experience_required;
+        $jobText = $job->title . ' ' . strip_tags($job->key_skills) . ' ' . strip_tags($job->description) . ' ' . strip_tags($job->requirements) . ' ' . $job->location . ' ' . $job->experience_required;
         $escapedText = escapeshellarg($jobText);
         $jobId = escapeshellarg($job->id);
         $scriptPath = escapeshellarg(base_path('python/match.py'));
@@ -184,4 +193,16 @@ class ProviderController extends Controller
 
         return view('provider.applicants', compact('user', 'job', 'applications'));
     }
+
+    public function allApplicants()
+    {
+        $user = $this->authUser();
+        $jobIds = $user->postedJobs()->pluck('id');
+        $applications = Application::whereIn('job_id', $jobIds)
+            ->with(['seeker', 'job'])
+            ->latest()
+            ->get();
+        return view('provider.all-applicants', compact('user', 'applications'));
+    }
 }
+

@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', 'Applicants')
+@section('title', 'All Applicants')
 
 @section('nav_links')
 <a href="{{ route('provider.dashboard') }}" class="nav-link">Dashboard</a>
@@ -24,45 +24,6 @@
     .page-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 24px; }
     .page-title   { font-size: 26px; font-weight: 800; color: #0f172a; letter-spacing: -0.4px; }
     .page-sub     { font-size: 13px; color: #64748b; margin-top: 3px; }
-
-    /* ===== STATUS BADGES ===== */
-    .status-open {
-        display: inline-flex; align-items: center; gap: 5px;
-        padding: 5px 14px; border-radius: 999px; font-size: 12px; font-weight: 700;
-        background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0;
-    }
-    .status-open::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: #16a34a; display: inline-block; }
-    .status-closed {
-        display: inline-flex; align-items: center; gap: 5px;
-        padding: 5px 14px; border-radius: 999px; font-size: 12px; font-weight: 700;
-        background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca;
-    }
-    .status-closed::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: #dc2626; display: inline-block; }
-
-    /* ===== JOB SUMMARY CARD ===== */
-    .job-summary {
-        background: #fff;
-        border: 1.5px solid #f1f5f9;
-        border-radius: 20px;
-        padding: 22px 24px;
-        margin-bottom: 24px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-    }
-    .job-summary-grid {
-        display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;
-        margin-bottom: 14px;
-    }
-    @media (max-width: 600px) { .job-summary-grid { grid-template-columns: 1fr 1fr; } }
-
-    .job-summary-item { }
-    .job-summary-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #94a3b8; margin-bottom: 4px; }
-    .job-summary-value { font-size: 14px; font-weight: 700; color: #0f172a; }
-
-    .skill-chip {
-        display: inline-flex; padding: 4px 12px; border-radius: 8px;
-        font-size: 12px; font-weight: 600;
-        background: #eef2ff; color: #4f46e5; border: 1px solid #c7d2fe;
-    }
 
     /* ===== APPLICANT CARD ===== */
     .applicant-card {
@@ -91,6 +52,7 @@
     .applicant-info { flex: 1; min-width: 0; }
     .applicant-name { font-size: 15px; font-weight: 800; color: #0f172a; }
     .applicant-email { font-size: 12px; color: #64748b; margin-top: 1px; }
+    .applicant-job   { font-size: 12px; color: #6366f1; font-weight: 600; margin-top: 3px; }
     .applicant-location { font-size: 12px; color: #94a3b8; margin-top: 2px; }
 
     .applicant-skills { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; }
@@ -124,23 +86,6 @@
     .score-low  { color: #64748b; }
     .score-low .match-bar-fill  { background: linear-gradient(90deg, #94a3b8, #64748b); }
 
-    /* ===== CLICKABLE MATCH ===== */
-    .match-wrapper {
-        cursor: pointer;
-        border-radius: 12px;
-        transition: background 0.2s, transform 0.15s;
-        padding: 8px 12px;
-    }
-    .match-wrapper:hover {
-        background: #f8fafc;
-        transform: scale(1.05);
-    }
-    .match-wrapper .match-hint {
-        font-size: 9px; color: #c7d2fe; font-weight: 600;
-        text-transform: uppercase; letter-spacing: 0.08em;
-        margin-top: 4px;
-    }
-
     /* ===== APPLIED DATE ===== */
     .applied-col { text-align: center; flex-shrink: 0; padding: 0 8px; border-left: 1px solid #f1f5f9; }
     .applied-date { font-size: 13px; font-weight: 700; color: #0f172a; }
@@ -153,6 +98,19 @@
     }
     .empty-state h3 { font-size: 18px; font-weight: 700; color: #0f172a; margin-bottom: 8px; }
     .empty-state p  { font-size: 13px; color: #94a3b8; }
+
+    /* ===== CLICKABLE MATCH ===== */
+    .match-wrapper {
+        cursor: pointer;
+        border-radius: 12px;
+        transition: background 0.2s, transform 0.15s;
+        padding: 8px 12px;
+    }
+    .match-wrapper:hover { background: #f8fafc; transform: scale(1.05); }
+    .match-wrapper .match-hint {
+        font-size: 9px; color: #c7d2fe; font-weight: 600;
+        text-transform: uppercase; letter-spacing: 0.08em; margin-top: 4px;
+    }
 </style>
 @endpush
 
@@ -160,44 +118,14 @@
 <div class="fade-up">
 
     {{-- Back --}}
-    <a href="{{ route('provider.jobs') }}" class="back-link">← Back to Jobs</a>
+    <a href="{{ route('provider.dashboard') }}" class="back-link">← Back to Dashboard</a>
 
     {{-- ===== PAGE HEADER ===== --}}
     <div class="page-header">
         <div>
-            <div class="page-title">Applicants</div>
-            <div class="page-sub">{{ $job->title }} &nbsp;·&nbsp; {{ $applications->count() }} applicant(s)</div>
+            <div class="page-title">All Applicants</div>
+            <div class="page-sub">Review candidates across all your active and closed job postings</div>
         </div>
-        @if($job->isOpen())
-            <span class="status-open">Open</span>
-        @else
-            <span class="status-closed">Closed</span>
-        @endif
-    </div>
-
-    {{-- ===== JOB SUMMARY ===== --}}
-    <div class="job-summary">
-        <div class="job-summary-grid">
-            <div class="job-summary-item">
-                <div class="job-summary-label">Location</div>
-                <div class="job-summary-value">{{ $job->location }}</div>
-            </div>
-            <div class="job-summary-item">
-                <div class="job-summary-label">Job Type</div>
-                <div class="job-summary-value" style="text-transform:capitalize;">{{ $job->type }}</div>
-            </div>
-            <div class="job-summary-item">
-                <div class="job-summary-label">Experience Required</div>
-                <div class="job-summary-value">{{ $job->experience_required ?? '—' }}</div>
-            </div>
-        </div>
-        @if($job->key_skills)
-        <div style="display:flex; flex-wrap:wrap; gap:6px;">
-            @foreach($job->skillsArray() as $skill)
-            <span class="skill-chip">{{ $skill }}</span>
-            @endforeach
-        </div>
-        @endif
     </div>
 
     {{-- ===== APPLICANT SEARCH BAR ===== --}}
@@ -219,10 +147,10 @@
     @php
         $score      = $app->match_score;
         $scoreClass = $score >= 70 ? 'score-high' : ($score >= 40 ? 'score-mid' : 'score-low');
-        $details    = $app->seeker->matchDetails($job, $score);
+        $details    = $app->seeker->matchDetails($app->job, $score);
         $matchDataArr = [
             'name'             => $app->seeker->name,
-            'job_title'        => $job->title,
+            'job_title'        => $app->job->title,
             'score'            => $score,
             'matched_skills'   => array_values($details['matched_skills']),
             'unmatched_skills' => array_values($details['unmatched_skills']),
@@ -246,6 +174,7 @@
         <div class="applicant-info">
             <div class="applicant-name">{{ $app->seeker->name }}</div>
             <div class="applicant-email">{{ $app->seeker->email }}</div>
+            <div class="applicant-job">Applied for: {{ $app->job->title }}</div>
             @if($app->seeker->location)
             <div class="applicant-location">{{ $app->seeker->location }}</div>
             @endif
@@ -288,7 +217,7 @@
     @empty
     <div class="empty-state">
         <h3>No applicants yet</h3>
-        <p>Share your job posting to attract qualified candidates.</p>
+        <p>Your job listings will show applicant profiles here once candidates apply.</p>
     </div>
     @endforelse
 

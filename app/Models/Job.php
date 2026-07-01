@@ -29,9 +29,17 @@ class Job extends Model
         return $this->status === 'open';
     }
 
-    // Return skills as array
+    // Return skills as array — strip Quill HTML first, then split by comma/newline
     public function skillsArray(): array
     {
-        return array_filter(array_map('trim', explode(',', $this->key_skills ?? '')));
+        $raw = $this->key_skills ?? '';
+        // Replace <li>, <br>, </p> with commas so list items become separate entries
+        $raw = preg_replace('/<\/?(li|br|p)[^>]*>/i', ',', $raw);
+        // Strip remaining HTML tags
+        $raw = strip_tags($raw);
+        // Decode HTML entities (e.g. &amp;)
+        $raw = html_entity_decode($raw, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        // Split by comma or newline, trim, remove empties
+        return array_values(array_filter(array_map('trim', preg_split('/[,\n]+/', $raw))));
     }
 }

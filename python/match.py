@@ -30,28 +30,29 @@ STOPWORDS = set([
 
 # Category Anchors for Block Projection
 CATEGORIES = {
-    # Block A: Experience (3 dimensions)
-    0: {"name": "Experience Level/Seniority", "anchors": ["senior", "lead", "principal", "manager", "director", "head", "architect", "expert", "vp", "chief", "executive", "sr"]},
-    1: {"name": "Experience Years", "anchors": ["years", "year", "experience", "exp", "practiced", "working", "career", "history"]},
-    2: {"name": "Experience Juniority", "anchors": ["junior", "intern", "entry", "trainee", "associate", "beginner", "fresher", "co-op", "jr", "student"]},
+    # Block A: Experience & Requirements (3 dimensions)
+    0: {"name": "Experience Level/Seniority/Requirements", "anchors": ["senior", "lead", "principal", "manager", "director", "head", "architect", "expert", "vp", "chief", "executive", "sr", "required", "qualification", "must", "needed", "should", "ability", "skillset", "requisite", "criteria", "eligibility", "qualification", "minimum"]},
+    1: {"name": "Experience Years", "anchors": ["years", "year", "experience", "exp", "practiced", "working", "career", "history", "tenure", "background"]},
+    2: {"name": "Experience Juniority", "anchors": ["junior", "intern", "entry", "trainee", "associate", "beginner", "fresher", "co-op", "jr", "student", "apprentice"]},
     
-    # Block B: Job Profile (3 dimensions)
-    3: {"name": "Job Profile Domain", "anchors": ["developer", "engineer", "programmer", "coder", "software", "development", "application", "systems", "architect"]},
-    4: {"name": "Job Profile Role Type", "anchors": ["web", "frontend", "backend", "fullstack", "stack", "mobile", "ios", "android", "designer", "ui", "ux", "interface", "app"]},
-    5: {"name": "Job Profile Context", "anchors": ["devops", "cloud", "aws", "docker", "kubernetes", "linux", "systems", "network", "security", "database", "sql", "postgresql", "mysql", "data", "ml", "ai", "machine", "learning", "qa", "test", "testing", "analytics", "science", "nlp"]},
+    # Block B: Job Profile & Description (3 dimensions)
+    3: {"name": "Job Profile Domain (Description Context)", "anchors": ["developer", "engineer", "programmer", "coder", "software", "development", "application", "systems", "architect", "web", "design", "develop", "maintain", "test", "build", "code", "program", "integrate", "implement", "optimize"]},
+    4: {"name": "Job Profile Role Type", "anchors": ["web", "frontend", "backend", "fullstack", "stack", "mobile", "ios", "android", "designer", "ui", "ux", "interface", "app", "dashboard", "graphics", "artist", "illustrator"]},
+    5: {"name": "Job Profile Context (Duties & Responsibilities)", "anchors": ["devops", "cloud", "aws", "docker", "kubernetes", "linux", "systems", "network", "security", "database", "sql", "postgresql", "mysql", "data", "ml", "ai", "machine", "learning", "qa", "test", "testing", "analytics", "science", "nlp", "pipelines", "automation", "infrastructure", "deployment", "ci", "cd"]},
     
-    # Block C: Projects (1 dimension)
-    6: {"name": "Projects", "anchors": ["project", "portfolio", "github", "build", "implemented", "created", "designed", "achieved", "developed", "led", "contributed", "repo", "repository", "side-project"]},
+    # Block C: Projects & Portfolio (1 dimension)
+    6: {"name": "Projects & Portfolio", "anchors": ["project", "portfolio", "github", "build", "implemented", "created", "designed", "achieved", "developed", "led", "contributed", "repo", "repository", "side-project", "gitlab", "bitbucket", "behance", "dribbble"]},
     
     # Block D: Location (1 dimension)
     7: {"name": "Location", "anchors": ["remote", "hybrid", "onsite", "office", "home", "flexible", "travel", "kathmandu", "lalitpur", "pokhara", "nepal", "city", "country"]},
     
     # Block E: Skills (1 dimension)
-    8: {"name": "Skills", "anchors": ["python", "php", "javascript", "react", "laravel", "sql", "css", "html", "docker", "django", "postgresql", "node", "java", "c#", "c++", "ruby", "rails", "git", "bash", "linux", "aws", "gcp", "azure", "tailwind", "rest", "api", "apis"]},
+    8: {"name": "Skills (Tech Stack)", "anchors": ["python", "php", "javascript", "react", "laravel", "sql", "css", "html", "docker", "django", "postgresql", "node", "java", "c#", "c++", "ruby", "rails", "git", "bash", "linux", "aws", "gcp", "azure", "tailwind", "rest", "api", "apis", "vue", "angular", "typescript", "nextjs", "next.js", "mongodb", "mysql", "nosql", "sass", "bootstrap", "jquery", "graphql"]},
     
     # Block F: Education (1 dimension)
-    9: {"name": "Education", "anchors": ["degree", "bachelor", "master", "phd", "university", "college", "diploma", "graduate", "study", "education", "bsc", "msc", "tu", "science", "computer", "engineering", "academic"]}
+    9: {"name": "Education", "anchors": ["degree", "bachelor", "master", "phd", "university", "college", "diploma", "graduate", "study", "education", "bsc", "msc", "tu", "science", "computer", "engineering", "academic", "certified", "certification", "diploma"]}
 }
+
 
 class TextPreprocessor:
     @staticmethod

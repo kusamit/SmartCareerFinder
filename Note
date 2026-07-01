@@ -1,0 +1,43 @@
+# Smart Career Finder - Work Flow Walkthrough
+
+This document visually and textually details the structural pipeline used by the job portal to match Job Seekers and Job Listings using semantic search.
+
+## Visual Pipeline Diagram
+
+![Working Flow Diagram](file:///C:/Users/Admin/.gemini/antigravity-ide/brain/024b53d7-97b1-4079-a998-426ecb2852d3/workflow_diagram_1780972902179.png)
+
+---
+
+## Technical Pipeline Stages
+
+### Step 1: Profile & Job Input Generation
+*   **Seeker Side:** A seeker registers or updates their skills, experience, location, education, and preferred roles. The application uses these fields to auto-generate a natural language profile summary.
+*   **Provider Side:** A provider posts a job description containing details like the title, key skills (comma-separated), qualifications, experience required, and role description.
+
+### Step 2: CLI Extraction & Execution
+*   The Laravel application triggers the Python CLI backend script [match.py](file:///D:/Career%20Finder/python/match.py) via shell execution.
+*   It feeds the user profile text or job details as arguments to project them into numerical vectors.
+
+### Step 3: Stopword Filtering & Normalization
+*   The Python preprocessor lowercases all input, removes standard punctuation, and discards generic stopwords (e.g. *the, and, that*).
+*   It automatically extracts numeric years of experience using regular expressions.
+
+### Step 4: High-Dimensional Text representation (TF-IDF)
+*   The system fits a Term Frequency-Inverse Document Frequency (TF-IDF) vectorizer over all compiled texts in the database.
+*   Each document receives a sparse vector representing relative word importances based on vocabulary frequency.
+
+### Step 5: Dense 10D Category Projection
+*   The TF-IDF terms are grouped into 10 semantic category buckets (Seniority, Experience Years, Juniority, Domain, Role, Context, Projects, Location, Skills, Education).
+*   The vector values are summed per category, combined with normalized experience years, and **L2 normalized** to form a unit-length 10-dimensional dense embedding vector.
+
+### Step 6: Centroid Clustering (K-Means)
+*   The vectors are clustered into groups using custom K-Means clustering.
+*   This segments the vector space, creating 3 centroid vectors.
+
+### Step 7: IVF (Inverted File) Routing & Search
+*   During a match request (e.g. Seeker looking for jobs, or scanning a CV):
+    1.  The query vector is evaluated against the 3 centroids.
+    2.  The closest 2 centroids (`n_probe=2`) are chosen.
+    3.  Only candidates assigned to these centroids are retrieved from the index lists.
+    4.  An exact **Cosine Similarity** calculation runs on these candidate vectors.
+    5.  Scores are returned to Laravel as percentages ($0 - 100\%$) and displayed on the interface.

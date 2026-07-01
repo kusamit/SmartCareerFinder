@@ -1,0 +1,234 @@
+================================================================================
+SMART CAREER FINDER — MATCH ALGORITHM DOCUMENTATION (Matchnote.txt)
+================================================================================
+
+This document details the complete design, mathematical weights, and clean
+working code logic of the two-stage matching algorithm implemented in the
+Smart Career Finder platform.
+
+--------------------------------------------------------------------------------
+1. THE TWO-STAGE ALGORITHM PIPELINE
+--------------------------------------------------------------------------------
+The matching system divides calculations into a high-performance vector 
+matching stage (Python FAISS Index) and a precise deterministic verification 
+stage (PHP Composite Scoring). This keeps queries fast while ensuring 
+business constraints are accurately reflected.
+
+  STAGE 1: FAISS Semantic Vector Match (Python Pipeline)
+  - Processes natural language profile fields and job descriptions.
+  - Builds TF-IDF representations to rank word importance.
+  - Projects high-dimensional TF-IDF vectors into a 10-dimensional dense space.
+  - Groups jobs using IVF-Flat clustering (K-Means) to perform rapid searches.
+  - Evaluates similarity using normalized Cosine Similarity (0% to 100%).
+
+  STAGE 2: Composite Scoring & Post-FAISS Detail Layer (PHP/Laravel)
+  - Applies a weighted formula to the FAISS output score (representing 70%).
+  - Evaluates location, portfolio/project presence, and preferred job domain
+    alignment to award point-based bonuses (up to 30%).
+  - Generates split Match / Unmatched percentages displayed on cards.
+  - Provides a detailed tabular points breakdown inside the interactive modal.
+
+--------------------------------------------------------------------------------
+2. DETAILED WEIGHTING FORMULA (STAGE 2)
+--------------------------------------------------------------------------------
+The Final Match Score shown on candidate cards is computed as follows:
+
+  Final Score = FAISS_Weighted (70%) 
+                + Location_Match (10%) 
+                + Portfolio/Projects (10%) 
+                + Job_Domain (10%)
+
+  ---------------------------------------------------------------------------
+  A. FAISS WEIGHTED (Max 70 points / Max 70%)
+  - Calculated as: FAISS_Score * 0.70
+  - Represents the core semantic matching of skills, descriptions, and 
+    job requirements.
+
+  B. LOCATION MATCH (Max 10 points / Max 10%)
+  - Awards 10 points if the seeker's location aligns with the job location.
+  - Remote jobs automatically match all candidates (gives 10 points).
+  - Matches if the seeker's location string is a substring of the job 
+    location (or vice versa).
+
+  C. PORTFOLIO / PROJECTS (Max 10 points / Max 10%)
+  - Awards 10 points if the seeker has an uploaded CV or has links 
+    to GitHub/portfolio projects inside their profile summary.
+  - Checks for keywords like: "github", "gitlab", "portfolio", "project", 
+    "repo", "bitbucket", "behance", "dribbble".
+
+  D. PREFERRED JOB DOMAIN (Max 10 points / Max 10%)
+  - Awards 10 points if the seeker's preferred role aligns with the job 
+    domain category anchors.
+  - Matches domain roles (e.g. Developer, Designer, Scientist, Analyst, Manager)
+    against job title and description.
+  ---------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+3. STAGE 1: FAISS SEMANTIC VECTOR CALCULATION (Skills, Description, Requirements)
+--------------------------------------------------------------------------------
+To perform the semantic match, the text from profiles and jobs is mapped 
+into a 10-dimensional dense space. The dimensions explicitly group skills, 
+job description contexts, and requirements:
+
+  BLOCK A: Requirements & Seniority
+  - Dim 0: Requirements, Seniority, Eligibility (anchors: "senior", "lead", 
+    "required", "must", "qualification", "needed", "minimum", "criteria")
+  - Dim 1: Experience Years (anchors: "years", "experience", "exp", "tenure")
+  - Dim 2: Juniority (anchors: "junior", "intern", "trainee", "fresher", "jr")
+
+  BLOCK B: Job Profile & Description
+  - Dim 3: Domain & Description Duties (anchors: "software", "development", 
+    "design", "develop", "maintain", "test", "build", "code", "optimize")
+  - Dim 4: Role Type (anchors: "frontend", "backend", "fullstack", "mobile", 
+    "designer", "ui/ux")
+  - Dim 5: Responsibilities Context (anchors: "devops", "cloud", "security", 
+    "database", "ml", "ai", "pipelines", "automation", "infrastructure")
+
+  BLOCK C: Projects & Portfolio
+  - Dim 6: Projects/Repos (anchors: "project", "portfolio", "github", "gitlab")
+
+  BLOCK D: Location
+  - Dim 7: Location Type (anchors: "remote", "hybrid", "onsite", "kathmandu")
+
+  BLOCK E: Technical Skills
+  - Dim 8: Tech Stack Skills (anchors: "python", "php", "javascript", "react", 
+    "laravel", "sql", "docker", "django", "postgresql", "node", "typescript")
+
+  BLOCK F: Education
+  - Dim 9: Academic Background (anchors: "degree", "bachelor", "master", "bsc")
+
+--------------------------------------------------------------------------------
+4. HOW THE SCORES ARE DETERMINED & MATH DETAIL
+--------------------------------------------------------------------------------
+Here is the step-by-step math behind the scores generated by the system:
+
+  1. Text Preprocessing & Cleaning:
+     - The profile summary, skills, preferred role, location, and education 
+       are cleaned.
+     - Stopwords like "and", "the", "with" are stripped.
+     - E.g., Seeker profile: "React Frontend Developer with 3 years experience" 
+       preprocesses to: `['react', 'frontend', 'developer', 'years', 'experience']`.
+
+  2. TF-IDF Calculation:
+     - Term Frequency (TF) measures how often a word occurs in a document.
+     - Inverse Document Frequency (IDF) measures how rare a word is across 
+       the entire corpus (all seekers and jobs combined).
+     - Rarity gives higher weight. A rare skill keyword like "next.js" scores
+       significantly higher than a generic word like "developer".
+
+  3. 10D Category Block Projection (Dense Embedding):
+     - Every word's TF-IDF weight is summed into the categories it anchors to.
+     - A normalization step runs using L2-norm:
+         Vector = [w0, w1, ..., w9]
+         L2_Norm = sqrt(w0^2 + w1^2 + ... + w9^2)
+         Normalized Vector = [w0 / L2_Norm, w1 / L2_Norm, ..., w9 / L2_Norm]
+     - This scales the vector to unit length (1.0), meaning long and short 
+       texts are fairly comparable.
+
+  4. FAISS IVF Search and Cosine Similarity:
+     - Jobs are clustered using K-Means.
+     - The Seeker's vector is matched against the closest clusters (IVF-Flat n_probe=2).
+     - Cosine similarity is calculated as the dot product between the normalized 
+       seeker vector (S) and job vector (J):
+         Similarity = S · J = sum(s_i * j_i) for i in 0..9
+     - FAISS Score = max(0, min(100, int(similarity * 100)))
+
+  5. Composite Final Score:
+     - The FAISS score represents 70% of the total.
+     - The PHP validation layer adds up to 30% based on exact parameters:
+       - Location (10%): matches remote jobs or city overlaps.
+       - Portfolio (10%): checks CV status and repository tags.
+       - Domain (10%): checks functional profile match.
+     - E.g., Seeker matches a job at 80% on FAISS. Seeker lives in Kathmandu 
+       and job is in Kathmandu (Location match = 10). Seeker has no projects 
+       found (Portfolio = 0). Seeker domain aligns (Domain match = 10).
+       - FAISS weighted: 80 * 0.70 = 56 pts.
+       - Location bonus: 10 pts.
+       - Portfolio bonus: 0 pts.
+       - Domain bonus: 10 pts.
+       - Final score = 56 + 10 + 0 + 10 = 76% Match.
+       - The remaining 24% is shown as the Unmatched score.
+
+  6. Back-Calculating the Breakdown for the Modal:
+     - To ensure database consistency, the stored score is read on click.
+     - The PHP layer back-calculates the FAISS contribution by subtracting 
+       the computed bonuses (Location, Portfolio, Domain) from the stored score:
+         FAISS_Weighted = Stored_Score - Bonuses
+         FAISS_Score_Approx = FAISS_Weighted / 0.70
+     - This ensures the UI breakdown perfectly tallies up to the final score.
+
+--------------------------------------------------------------------------------
+5. CORE ALGORITHM IMPLEMENTATION CODE
+--------------------------------------------------------------------------------
+
+Below is the clean, structured logic implementing the categories, TF-IDF 
+vectorization, L2-normalization, and IVF searching.
+
+A. Python Vector Generation (Extract from match.py)
+--------------------------------------------------------------------------------
+class TextPreprocessor:
+    @staticmethod
+    def preprocess(text):
+        if not text: return []
+        text = text.lower()
+        text = re.sub(r'[^a-z0-9\s]', ' ', text)
+        words = text.split()
+        return [w for w in words if w not in STOPWORDS and len(w) > 1]
+
+class DenseEmbeddingGenerator:
+    @staticmethod
+    def generate(text, tfidf_vector, vectorizer):
+        emb = [0.0] * 10
+        if not vectorizer.vocab or not tfidf_vector:
+            return emb
+
+        for word, idx in vectorizer.vocab.items():
+            val = tfidf_vector[idx]
+            if val <= 0: continue
+
+            for cat_id, cat_info in CATEGORIES.items():
+                if word in cat_info["anchors"]:
+                    emb[cat_id] += val
+
+        # Normalize with L2 Norm
+        norm = math.sqrt(sum(x * x for x in emb))
+        if norm > 1e-9:
+            emb = [x / norm for x in emb]
+        else:
+            emb = [1.0 / math.sqrt(10.0)] * 10
+        return emb
+
+B. PHP Composite Validation (Extract from User.php)
+--------------------------------------------------------------------------------
+public function compositeScore(Job $job, int $faissScore): array
+{
+    // FAISS contribution (Weighted to 70%)
+    $faissWeighted = (int) round($faissScore * 0.70);
+
+    // Location Match (10%)
+    $locationMatch = $this->checkLocationMatch($job);
+    $locationPts   = $locationMatch ? 10 : 0;
+
+    // Portfolio/Projects Match (10%)
+    $portfolioMatch = $this->hasPortfolio();
+    $portfolioPts   = $portfolioMatch ? 10 : 0;
+
+    // Preferred Job Domain Match (10%)
+    $domainMatch = $this->checkDomainMatch($job);
+    $domainPts   = $domainMatch ? 10 : 0;
+
+    $finalScore = min(100, $faissWeighted + $locationPts + $portfolioPts + $domainPts);
+
+    return [
+        'faiss_score'     => $faissScore,
+        'faiss_weighted'  => $faissWeighted,
+        'location_match'  => $locationMatch,
+        'location_pts'    => $locationPts,
+        'portfolio_match' => $portfolioMatch,
+        'portfolio_pts'   => $portfolioPts,
+        'domain_match'    => $domainMatch,
+        'domain_pts'      => $domainPts,
+        'final_score'     => $finalScore
+    ];
+}
+================================================================================
