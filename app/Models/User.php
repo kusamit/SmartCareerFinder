@@ -10,7 +10,7 @@ class User extends Model
     protected $fillable = [
         'name', 'email', 'password', 'role',
         'skills', 'education', 'experience_years', 'preferred_role',
-        'location', 'cv_path', 'profile_summary',
+        'location', 'phone', 'portfolio', 'cv_path', 'profile_summary',
         'company_name', 'company_website', 'company_description',
     ];
 
@@ -28,6 +28,12 @@ class User extends Model
         return $this->hasMany(Job::class);
     }
 
+    // Seeker: education history
+    public function educations(): HasMany
+    {
+        return $this->hasMany(Education::class)->orderByDesc('start_year');
+    }
+
     public function isSeeker(): bool
     {
         return $this->role === 'seeker';
@@ -41,15 +47,79 @@ class User extends Model
     // Generate profile summary as natural language text
     public function generateProfileSummary(): string
     {
-        $skills = $this->skills ?? 'various skills';
-        $exp    = $this->experience_years ?? 0;
-        $role   = $this->preferred_role ?? 'a suitable role';
-        $loc    = $this->location ?? 'any location';
-        $edu    = $this->education ?? '';
+        $skills  = implode(', ', $this->skillsArray()) ?: 'various skills';
+        $expText = trim(strip_tags($this->experience_years ?? ''));
+        $expDesc = is_numeric($expText) ? "{$expText} year(s) of experience" : "experience: {$expText}";
+        $role    = trim(strip_tags($this->preferred_role ?? '')) ?: 'a suitable role';
+        $loc     = trim(strip_tags($this->location ?? '')) ?: 'any location';
+        
+        $eduParts = [];
+        foreach ($this->educations as $e) {
+            $eduParts[] = "{$e->degree} in {$e->field_of_study} from {$e->school} ({$e->start_year} - {$e->end_year})";
+        }
+        $edu = implode(', ', $eduParts) ?: trim(strip_tags($this->education ?? ''));
 
-        return "{$this->name} is a professional with {$exp} year(s) of experience in {$skills}. "
+        return "{$this->name} is a professional with {$expDesc} in {$skills}. "
             . ($edu ? "Education: {$edu}. " : '')
             . "Looking for {$role} based in {$loc}.";
+    }
+
+    public function experienceYearsVal(): int
+    {
+        $raw = $this->experience_years ?? '';
+        $raw = strip_tags($raw);
+        $raw = html_entity_decode($raw, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        
+        // Find patterns like "3 years", "5+ years", "1 year"
+        preg_match_all('/(\d+)\+?\s*(?:year|yr)/i', $raw, $matches);
+        if (!empty($matches[1])) {
+            return (int) max(array_map('intval', $matches[1]));
+        }
+        
+        // Fallback: search for numbers
+        preg_match_all('/\b(\d+)\b/', $raw, $matches);
+        if (!empty($matches[1])) {
+            foreach ($matches[1] as $m) {
+                $val = (int) $m;
+                if ($val > 0 && $val <= 20) {
+                    return $val;
+                }
+            }
+        }
+        return 0;
+    }
+
+    public function experienceSummary(): string
+    {
+        $years = $this->experienceYearsVal();
+        if ($years > 0) return $years . ' yr(s)';
+
+        // Fallback: check if raw text is a plain number
+        $raw = trim(strip_tags($this->experience_years ?? ''));
+        if (is_numeric($raw) && (int)$raw > 0) return $raw . ' yr(s)';
+
+        // If experience text exists but no years parsed, show "Fresher"
+        if (!empty($raw)) return 'Fresher';
+
+        return '—';
+    }
+
+    public function skillsArray(): array
+    {
+        $raw = $this->skills ?? '';
+        $raw = preg_replace('/<\/?(li|br|p)[^>]*>/i', ',', $raw);
+        $raw = strip_tags($raw);
+        $raw = html_entity_decode($raw, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        return array_values(array_filter(array_map('trim', preg_split('/[,\n]+/', $raw))));
+    }
+
+    public function preferredRoleArray(): array
+    {
+        $raw = $this->preferred_role ?? '';
+        $raw = preg_replace('/<\/?(li|br|p)[^>]*>/i', ',', $raw);
+        $raw = strip_tags($raw);
+        $raw = html_entity_decode($raw, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        return array_values(array_filter(array_map('trim', preg_split('/[,\n]+/', $raw))));
     }
 
     // Vector-based matching score against a job (0-100) using FAISS index
@@ -73,11 +143,11 @@ class User extends Model
         }
 
         // Fallback: if user or job vector is missing, embed both and index
-        $profileText = $this->profile_summary . ' ' . $this->skills . ' ' . $this->preferred_role . ' ' . $this->location . ' ' . $this->education;
+        $profileText = strip_tags($this->profile_summary . ' ' . $this->skills . ' ' . $this->preferred_role . ' ' . $this->location . ' ' . $this->education);
         $escapedUserText = escapeshellarg($profileText);
         shell_exec("python {$scriptPath} --embed-user --id {$userId} --text {$escapedUserText}");
 
-        $jobText = $job->title . ' ' . $job->key_skills . ' ' . $job->description . ' ' . $job->requirements . ' ' . $job->location . ' ' . $job->experience_required;
+        $jobText = strip_tags($job->title . ' ' . $job->key_skills . ' ' . $job->description . ' ' . $job->requirements . ' ' . $job->location . ' ' . $job->experience_required);
         $escapedJobText = escapeshellarg($jobText);
         shell_exec("python {$scriptPath} --embed-job --id {$jobId} --text {$escapedJobText}");
 
@@ -101,52 +171,112 @@ class User extends Model
     // ─── Composite Scoring ────────────────────────────────────────────────────
 
     /**
-     * Check if seeker's location overlaps with job location.
+     * Check if seeker's city matches the job's city.
+     *
+     * "remote", "hybrid", "onsite" are JOB TYPES — not locations.
+     * They are stripped as noise. Only real city names (Kathmandu, Lalitpur,
+     * Pokhara, Birgunj, etc.) can produce a location match.
+     *
+     * Returns true only when both sides have at least one city token in common.
      */
     public function checkLocationMatch(Job $job): bool
     {
-        $seekerLoc = mb_strtolower(trim($this->location ?? ''));
-        $jobLoc    = mb_strtolower(trim($job->location ?? ''));
-        if (!$seekerLoc || !$jobLoc) return false;
-        if (str_contains($jobLoc, 'remote')) return true;            // remote matches anyone
-        return str_contains($jobLoc, $seekerLoc) || str_contains($seekerLoc, $jobLoc);
-    }
+        $seekerRaw = mb_strtolower(trim($this->location ?? ''));
+        $jobRaw    = mb_strtolower(trim($job->location ?? ''));
 
-    /**
-     * Check if seeker has portfolio / projects evidence.
-     */
-    public function hasPortfolio(): bool
-    {
-        if (!empty($this->cv_path)) return true;                     // uploaded CV counts
-        $summary = mb_strtolower($this->profile_summary ?? '');
-        $skills  = mb_strtolower($this->skills ?? '');
-        foreach (['github', 'gitlab', 'portfolio', 'project', 'repo', 'bitbucket', 'behance', 'dribbble'] as $kw) {
-            if (str_contains($summary, $kw) || str_contains($skills, $kw)) return true;
+        if (!$seekerRaw || !$jobRaw) return false;
+
+        // Words that must NEVER be treated as city names
+        $noise = [
+            // job-type / work-arrangement words
+            'remote', 'hybrid', 'onsite', 'on-site', 'work from home',
+            'wfh', 'anywhere', 'nationwide', 'flexible',
+            // geographic noise (note: 'nepal' is removed so it can match country-wide locations as requested)
+            'province', 'district', 'city', 'zone', 'municipality',
+            'metropolitan', 'sub-metropolitan', 'rural', 'urban', 'ward',
+            // common filler
+            'the', 'of', 'and', 'in', 'at', 'near',
+        ];
+
+        // Extract real city tokens only
+        $extractCityTokens = function (string $raw) use ($noise): array {
+            $parts  = preg_split('/[,\/|\-]+/', $raw);
+            $tokens = [];
+            foreach ($parts as $part) {
+                $tok = trim($part);
+                if ($tok && !in_array($tok, $noise) && strlen($tok) > 1) {
+                    $tokens[] = $tok;
+                }
+            }
+            return $tokens;
+        };
+
+        $seekerTokens = $extractCityTokens($seekerRaw);
+        $jobTokens    = $extractCityTokens($jobRaw);
+
+        // No real city on either side → no location match
+        if (empty($seekerTokens) || empty($jobTokens)) return false;
+
+        // Match if any city token appears on both sides
+        foreach ($seekerTokens as $st) {
+            foreach ($jobTokens as $jt) {
+                if ($st === $jt || str_contains($jt, $st) || str_contains($st, $jt)) {
+                    return true;
+                }
+            }
         }
+
         return false;
     }
 
     /**
-     * Check if seeker's preferred role aligns with job domain.
+     * Check if seeker has portfolio / projects evidence.
+     * Strictly checks if the dedicated project/portfolio field is not empty.
      */
-    public function checkDomainMatch(Job $job): bool
+    public function hasPortfolio(): bool
     {
-        $seekerRole = mb_strtolower(trim($this->preferred_role ?? ''));
-        $jobTitle   = mb_strtolower(trim($job->title ?? ''));
-        $jobDesc    = mb_strtolower(substr($job->description ?? '', 0, 500));
-        if (!$seekerRole) return false;
+        $raw = trim(strip_tags($this->portfolio ?? ''));
+        return !empty($raw);
+    }
 
-        // Shared domain keywords — if both role and job contain one, it's a domain match
-        $domains = ['developer', 'engineer', 'designer', 'analyst', 'manager', 'scientist',
-                    'devops', 'admin', 'tester', 'qa', 'frontend', 'backend', 'fullstack',
-                    'mobile', 'web', 'data', 'security', 'cloud', 'architect', 'lead'];
-        foreach ($domains as $kw) {
-            if (str_contains($seekerRole, $kw) && (str_contains($jobTitle, $kw) || str_contains($jobDesc, $kw))) {
-                return true;
+    /**
+     * Check if ANY of the seeker's preferred roles aligns with the job domain.
+     * Each role in the comma/newline-separated list is checked independently.
+     * Returns [matched => bool, matched_role => string|null, matched_keyword => string|null]
+     */
+    public function checkDomainMatch(Job $job): array
+    {
+        $roles    = $this->preferredRoleArray();          // e.g. ['Backend Developer','Frontend Developer','UI/UX Designer']
+        $jobTitle = mb_strtolower(trim($job->title ?? ''));
+        $jobDesc  = mb_strtolower(substr(strip_tags($job->description ?? ''), 0, 500));
+
+        // Domain keyword groups — shared vocabulary between role and job
+        $domains = [
+            'developer', 'engineer', 'designer', 'analyst', 'manager', 'scientist',
+            'devops', 'admin', 'tester', 'qa', 'frontend', 'backend', 'fullstack',
+            'mobile', 'web', 'data', 'security', 'cloud', 'architect', 'lead',
+            'ui', 'ux', 'product', 'marketing', 'sales', 'support', 'operations',
+        ];
+
+        foreach ($roles as $role) {
+            $roleLower = mb_strtolower(trim($role));
+            if (!$roleLower) continue;
+
+            // 1. Keyword overlap: both role AND job share a domain keyword
+            foreach ($domains as $kw) {
+                if (str_contains($roleLower, $kw)
+                    && (str_contains($jobTitle, $kw) || str_contains($jobDesc, $kw))) {
+                    return ['matched' => true, 'matched_role' => $role, 'matched_keyword' => $kw];
+                }
+            }
+
+            // 2. Direct substring overlap between this role and the job title
+            if (str_contains($jobTitle, $roleLower) || str_contains($roleLower, $jobTitle)) {
+                return ['matched' => true, 'matched_role' => $role, 'matched_keyword' => null];
             }
         }
-        // Fallback: direct substring overlap between role and title
-        return str_contains($jobTitle, $seekerRole) || str_contains($seekerRole, $jobTitle);
+
+        return ['matched' => false, 'matched_role' => null, 'matched_keyword' => null];
     }
 
     /**
@@ -155,6 +285,39 @@ class User extends Model
      */
     public function compositeScore(Job $job, int $faissScore): array
     {
+        if ($faissScore <= 0) {
+            $seekerSkills = $this->skillsArray();
+            $jobSkills = $job->skillsArray();
+            
+            $matchTerm = function ($term, $text) {
+                $escaped = preg_quote($term, '/');
+                $pattern = '/(?:^|[\s,.;:()\/\\-\\[\\]{}*])' . $escaped . '(?:$|[\s,.;:()\/\\-\\[\\]{}*])/i';
+                return (bool) preg_match($pattern, $text);
+            };
+            
+            $matchedCount = 0;
+            foreach ($jobSkills as $js) {
+                foreach ($seekerSkills as $ss) {
+                    $stdJs = mb_strtolower(trim($js));
+                    $stdSs = mb_strtolower(trim($ss));
+                    if ($stdJs === "apis") $stdJs = "api";
+                    if ($stdSs === "apis") $stdSs = "api";
+                    if (in_array($stdJs, ["github", "gitlab"])) $stdJs = "git";
+                    if (in_array($stdSs, ["github", "gitlab"])) $stdSs = "git";
+                    
+                    if ($stdJs === $stdSs 
+                        || $matchTerm($stdJs, $ss) 
+                        || $matchTerm($stdSs, $js)) {
+                        $matchedCount++;
+                        break;
+                    }
+                }
+            }
+            if ($matchedCount > 0 && count($jobSkills) > 0) {
+                $faissScore = (int) round(30 + 40 * ($matchedCount / count($jobSkills)));
+            }
+        }
+
         $faissWeighted  = (int) round($faissScore * 0.70);
 
         $locationMatch  = $this->checkLocationMatch($job);
@@ -163,7 +326,8 @@ class User extends Model
         $portfolioMatch = $this->hasPortfolio();
         $portfolioPts   = $portfolioMatch ? 10 : 0;
 
-        $domainMatch    = $this->checkDomainMatch($job);
+        $domainResult   = $this->checkDomainMatch($job);
+        $domainMatch    = $domainResult['matched'];
         $domainPts      = $domainMatch ? 10 : 0;
 
         $finalScore     = min(100, $faissWeighted + $locationPts + $portfolioPts + $domainPts);
@@ -179,6 +343,7 @@ class User extends Model
             'portfolio_pts'   => $portfolioPts,
             'portfolio_max'   => 10,
             'domain_match'    => $domainMatch,
+            'domain_matched_role' => $domainResult['matched_role'],
             'domain_pts'      => $domainPts,
             'domain_max'      => 10,
             'final_score'     => $finalScore,
@@ -187,41 +352,264 @@ class User extends Model
 
     // ─── Match Details (post-FAISS breakdown for modal) ───────────────────────
 
+    public function parseSkillExperiences(string $text): array
+    {
+        $textClean = preg_replace('/<[^>]*>/', "\n", $text);
+        $segments = [];
+        foreach (explode("\n", $textClean) as $line) {
+            foreach (preg_split('/[;,]/', $line) as $part) {
+                $part = trim($part);
+                if ($part) {
+                    $segments[] = $part;
+                }
+            }
+        }
+        
+        $knownSkills = [
+            "python", "php", "javascript", "react", "laravel", "sql", "css", "html", "docker", "django", 
+            "postgresql", "node", "java", "c#", "c++", "ruby", "rails", "git", "bash", "linux", "aws", 
+            "gcp", "azure", "tailwind", "rest", "api", "apis", "vue", "angular", "typescript", "nextjs", 
+            "next.js", "mongodb", "mysql", "nosql", "sass", "bootstrap", "jquery", "graphql",
+            "machine learning", "data science", "data analysis", "pandas", "numpy", "tensorflow", "pytorch", 
+            "nlp", "deep learning", "scikit-learn", "keras", "tableau", "power bi", "excel", "sheets", "matplotlib", "seaborn",
+            "devops", "kubernetes", "ci/cd", "jenkins", "ansible", "terraform", "vagrant", "nginx", "apache",
+            "digital marketing", "marketing", "seo", "sem", "social media", "content writing", "photoshop", 
+            "illustrator", "figma", "ui/ux", "ui", "ux", "graphic design", "wordpress", "github", "gitlab",
+            "communication skills", "problem solving", "statistics", "attention to detail"
+        ];
+        
+        usort($knownSkills, function($a, $b) {
+            return strlen($b) - strlen($a);
+        });
+        
+        $matchTerm = function ($term, $text) {
+            $escaped = preg_quote($term, '/');
+            $pattern = '/(?:^|[\s,.;:()\/\\-\\[\\]{}*])' . $escaped . '(?:$|[\s,.;:()\/\\-\\[\\]{}*])/i';
+            return (bool) preg_match($pattern, $text);
+        };
+        
+        $skillExps = [];
+        foreach ($segments as $seg) {
+            $segLower = strtolower($seg);
+            
+            $years = 0;
+            if (preg_match('/(\d+)\+?\s*(?:years?|yrs?|y\b)/i', $segLower, $m)) {
+                $years = (int) $m[1];
+                $segClean = str_replace($m[0], ' ', $segLower);
+            } else {
+                $segClean = $segLower;
+            }
+            
+            $segClean = preg_replace('/professional skills:?/i', '', $segClean);
+            $segClean = preg_replace('/[•●▪\-*:]/', ' ', $segClean);
+            $segClean = trim($segClean);
+            
+            $foundAny = false;
+            foreach ($knownSkills as $ks) {
+                if ($matchTerm($ks, $segClean)) {
+                    $stdName = $ks;
+                    if ($ks === "apis") $stdName = "api";
+                    if (in_array($ks, ["github", "gitlab"])) $stdName = "git";
+                    
+                    $skillExps[$stdName] = max($skillExps[$stdName] ?? 0, $years);
+                    $foundAny = true;
+                }
+            }
+            
+            if (!$foundAny && $years > 0) {
+                $parts = preg_split('/\band\b|\bor\b|&/i', $segClean);
+                foreach ($parts as $p) {
+                    $pClean = trim($p);
+                    if ($pClean && strlen($pClean) > 1) {
+                        $skillExps[$pClean] = max($skillExps[$pClean] ?? 0, $years);
+                    }
+                }
+            }
+        }
+        return $skillExps;
+    }
+
+    public function parseSkillRequirements(string $text): array
+    {
+        $textClean = preg_replace('/<[^>]*>/', "\n", $text);
+        $segments = [];
+        foreach (explode("\n", $textClean) as $line) {
+            foreach (preg_split('/[;,]/', $line) as $part) {
+                $part = trim($part);
+                if ($part) {
+                    $segments[] = $part;
+                }
+            }
+        }
+        
+        $knownSkills = [
+            "python", "php", "javascript", "react", "laravel", "sql", "css", "html", "docker", "django", 
+            "postgresql", "node", "java", "c#", "c++", "ruby", "rails", "git", "bash", "linux", "aws", 
+            "gcp", "azure", "tailwind", "rest", "api", "apis", "vue", "angular", "typescript", "nextjs", 
+            "next.js", "mongodb", "mysql", "nosql", "sass", "bootstrap", "jquery", "graphql",
+            "machine learning", "data science", "data analysis", "pandas", "numpy", "tensorflow", "pytorch", 
+            "nlp", "deep learning", "scikit-learn", "keras", "tableau", "power bi", "excel", "sheets", "matplotlib", "seaborn",
+            "devops", "kubernetes", "ci/cd", "jenkins", "ansible", "terraform", "vagrant", "nginx", "apache",
+            "digital marketing", "marketing", "seo", "sem", "social media", "content writing", "photoshop", 
+            "illustrator", "figma", "ui/ux", "ui", "ux", "graphic design", "wordpress", "github", "gitlab",
+            "communication skills", "problem solving", "statistics", "attention to detail"
+        ];
+        
+        usort($knownSkills, function($a, $b) {
+            return strlen($b) - strlen($a);
+        });
+        
+        $matchTerm = function ($term, $text) {
+            $escaped = preg_quote($term, '/');
+            $pattern = '/(?:^|[\s,.;:()\/\\-\\[\\]{}*])' . $escaped . '(?:$|[\s,.;:()\/\\-\\[\\]{}*])/i';
+            return (bool) preg_match($pattern, $text);
+        };
+        
+        // Extract global years
+        $globalYears = 0;
+        if (preg_match_all('/(\d+)\+?\s*(?:years?|yrs?|y\b)/i', $text, $matches)) {
+            $globalYears = max(array_map('intval', $matches[1]));
+        }
+        
+        $parsed = [];
+        foreach ($segments as $seg) {
+            $segLower = strtolower($seg);
+            
+            $years = 0;
+            if (preg_match('/(\d+)\+?\s*(?:years?|yrs?|y\b)/i', $segLower, $m)) {
+                $years = (int) $m[1];
+                $segClean = str_replace($m[0], ' ', $segLower);
+            } else {
+                $segClean = $segLower;
+            }
+            
+            $segClean = preg_replace('/[•●▪\-*:]/', ' ', $segClean);
+            $segClean = trim($segClean);
+            
+            foreach ($knownSkills as $ks) {
+                if ($matchTerm($ks, $segClean)) {
+                    $stdName = $ks;
+                    if ($ks === "apis") $stdName = "api";
+                    if (in_array($ks, ["github", "gitlab"])) $stdName = "git";
+                    
+                    $parsed[$stdName] = max($parsed[$stdName] ?? 0, $years);
+                }
+            }
+        }
+        
+        return $parsed;
+    }
+
     public function matchDetails(Job $job, int $storedScore = 0): array
     {
-        // 1. Skills comparison
-        $seekerSkills   = array_values(array_filter(array_map('trim', explode(',', $this->skills ?? ''))));
+        // 1. Skills comparison using safe boundaries
+        $seekerSkills   = $this->skillsArray();
         $jobSkills      = $job->skillsArray();
         $matchedSkills  = [];
         $unmatchedSkills = [];
+        
+        $matchTerm = function ($term, $text) {
+            $escaped = preg_quote($term, '/');
+            $pattern = '/(?:^|[\s,.;:()\/\\-\\[\\]{}*])' . $escaped . '(?:$|[\s,.;:()\/\\-\\[\\]{}*])/i';
+            return (bool) preg_match($pattern, $text);
+        };
+        
         foreach ($jobSkills as $js) {
             $found = false;
             foreach ($seekerSkills as $ss) {
-                if (mb_strtolower($js) === mb_strtolower($ss)
-                    || str_contains(mb_strtolower($js), mb_strtolower($ss))
-                    || str_contains(mb_strtolower($ss), mb_strtolower($js))) {
-                    $found = true; break;
+                $stdJs = mb_strtolower(trim($js));
+                $stdSs = mb_strtolower(trim($ss));
+                if ($stdJs === "apis") $stdJs = "api";
+                if ($stdSs === "apis") $stdSs = "api";
+                if (in_array($stdJs, ["github", "gitlab"])) $stdJs = "git";
+                if (in_array($stdSs, ["github", "gitlab"])) $stdSs = "git";
+                
+                if ($stdJs === $stdSs 
+                    || $matchTerm($stdJs, $ss) 
+                    || $matchTerm($stdSs, $js)) {
+                    $found = true; 
+                    break;
                 }
             }
             $found ? ($matchedSkills[] = $js) : ($unmatchedSkills[] = $js);
         }
 
         // 2. Experience comparison
-        $seekerExp      = (int) ($this->experience_years ?? 0);
+        $seekerExp = $this->experienceYearsVal();
+        $seekerSkillExps = $this->parseSkillExperiences($this->experience_years . ' ' . $this->skills);
+        $jobSkillReqs = $this->parseSkillRequirements($job->requirements . ' ' . $job->key_skills . ' ' . $job->experience_required);
+        
+        // Compare each required skill's experience individually
+        $specificMatches = [];
+        $overallMatch = true;
+        
+        foreach ($jobSkillReqs as $skill => $reqYears) {
+            if ($reqYears > 0) {
+                $seekerYears = 0;
+                $usingFallback = false;
+                foreach ($seekerSkillExps as $ss => $sy) {
+                    if ($ss === $skill || $matchTerm($ss, $skill) || $matchTerm($skill, $ss)) {
+                        $seekerYears = $sy;
+                        break;
+                    }
+                }
+                
+                // Fallback to overall experience years if skill-specific years not stated
+                if ($seekerYears == 0 && $seekerExp > 0) {
+                    $seekerYears = $seekerExp;
+                    $usingFallback = true;
+                }
+                
+                $matched = $seekerYears >= $reqYears;
+                if (!$matched) {
+                    $overallMatch = false;
+                }
+                
+                $specificMatches[] = [
+                    'skill'    => $skill,
+                    'required' => $reqYears,
+                    'seeker'   => $seekerYears,
+                    'matched'  => $matched,
+                    'fallback' => $usingFallback,
+                ];
+            }
+        }
+        
+        // Always compute jobExpRequired so it's available in the return array
         $jobExpRequired = 0;
         if ($job->experience_required) {
-            preg_match('/\d+/', $job->experience_required, $m);
+            preg_match('/\d+\+?/', $job->experience_required, $m);
             if (!empty($m)) $jobExpRequired = (int) $m[0];
         }
-        $expMatch   = $seekerExp >= $jobExpRequired;
-        $expMessage = $expMatch
-            ? "Candidate has {$seekerExp} yr(s) of experience — meets the requirement."
-            : "Candidate has {$seekerExp} yr(s); job requires {$job->experience_required}.";
+
+        if (count($specificMatches) > 0) {
+            $msgParts = [];
+            // Show at most 5 skill comparisons to keep message concise
+            $shown = array_slice($specificMatches, 0, 5);
+            foreach ($shown as $sm) {
+                $status = $sm['matched'] ? '✓' : '✗';
+                $yrLabel = ($sm['fallback'] ?? false) ? "~{$sm['seeker']}(overall)" : $sm['seeker'];
+                $msgParts[] = ucfirst($sm['skill']) . ": {$yrLabel}/{$sm['required']} yr(s) {$status}";
+            }
+            if (count($specificMatches) > 5) {
+                $msgParts[] = '… +' . (count($specificMatches) - 5) . ' more';
+            }
+            $expMatch = $overallMatch;
+            $expMessage = "Skill Experience: " . implode(' | ', $msgParts);
+        } else {
+            // Fallback to general experience years comparison
+            $expMatch   = $seekerExp >= $jobExpRequired;
+            $expMessage = $expMatch
+                ? "Candidate has {$seekerExp} yr(s) of experience — meets the requirement of " . ($job->experience_required ?: 'Fresher') . "."
+                : "Candidate has {$seekerExp} yr(s); job requires " . ($job->experience_required ?: 'Fresher') . ".";
+        }
 
         // 3. Composite post-FAISS components
         $locationMatch  = $this->checkLocationMatch($job);
         $portfolioMatch = $this->hasPortfolio();
-        $domainMatch    = $this->checkDomainMatch($job);
+        $domainResult   = $this->checkDomainMatch($job);
+        $domainMatch    = $domainResult['matched'];
+        $matchedRole    = $domainResult['matched_role'];
 
         // 4. Back-calculate composite breakdown from stored composite score
         $locationPts   = $locationMatch  ? 10 : 0;
@@ -231,40 +619,54 @@ class User extends Model
         $faissWeighted = max(0, $storedScore - $bonusPts);
         $faissApprox   = min(100, (int) round($faissWeighted / 0.70));
 
+        if ($faissApprox <= 0 && count($matchedSkills) > 0 && count($jobSkills) > 0) {
+            $faissApprox = (int) round(30 + 40 * (count($matchedSkills) / count($jobSkills)));
+            $faissWeighted = (int) round($faissApprox * 0.70);
+            if ($storedScore > 0) {
+                $storedScore = $faissWeighted + $bonusPts;
+            }
+        }
+
         $composite = [
-            'faiss_score'     => $faissApprox,
-            'faiss_weighted'  => $faissWeighted,
-            'faiss_max'       => 70,
-            'location_match'  => $locationMatch,
-            'location_pts'    => $locationPts,
-            'location_max'    => 10,
-            'portfolio_match' => $portfolioMatch,
-            'portfolio_pts'   => $portfolioPts,
-            'portfolio_max'   => 10,
-            'domain_match'    => $domainMatch,
-            'domain_pts'      => $domainPts,
-            'domain_max'      => 10,
-            'final_score'     => $storedScore ?: ($faissWeighted + $bonusPts),
+            'faiss_score'         => $faissApprox,
+            'faiss_weighted'      => $faissWeighted,
+            'faiss_max'           => 70,
+            'location_match'      => $locationMatch,
+            'location_pts'        => $locationPts,
+            'location_max'        => 10,
+            'portfolio_match'     => $portfolioMatch,
+            'portfolio_pts'       => $portfolioPts,
+            'portfolio_max'       => 10,
+            'domain_match'        => $domainMatch,
+            'domain_matched_role' => $matchedRole,
+            'domain_pts'          => $domainPts,
+            'domain_max'          => 10,
+            'final_score'         => $storedScore ?: ($faissWeighted + $bonusPts),
         ];
 
+        $allRoles   = $this->preferredRoleArray();
+        $seekerRoleLabel = $allRoles ? implode(', ', $allRoles) : 'Not Specified';
+
         return [
-            'matched_skills'  => $matchedSkills,
-            'unmatched_skills'=> $unmatchedSkills,
-            'location_match'  => $locationMatch,
-            'role_match'      => $domainMatch,
-            'seeker_skills'   => $seekerSkills,
-            'job_skills'      => $jobSkills,
-            'seeker_location' => $this->location ?? 'Not Specified',
-            'job_location'    => $job->location,
-            'seeker_role'     => $this->preferred_role ?? 'Not Specified',
-            'job_title'       => $job->title,
-            'exp_match'       => $expMatch,
-            'exp_message'     => $expMessage,
-            'seeker_exp'      => $seekerExp,
-            'job_exp'         => $jobExpRequired,
-            'portfolio_match' => $portfolioMatch,
-            'has_cv'          => !empty($this->cv_path),
-            'composite'       => $composite,
+            'matched_skills'      => $matchedSkills,
+            'unmatched_skills'    => $unmatchedSkills,
+            'location_match'      => $locationMatch,
+            'role_match'          => $domainMatch,
+            'role_matched_role'   => $matchedRole,
+            'seeker_roles'        => $allRoles,
+            'seeker_skills'       => $seekerSkills,
+            'job_skills'          => $jobSkills,
+            'seeker_location'     => $this->location ?? 'Not Specified',
+            'job_location'        => $job->location,
+            'seeker_role'         => $seekerRoleLabel,
+            'job_title'           => $job->title,
+            'exp_match'           => $expMatch,
+            'exp_message'         => $expMessage,
+            'seeker_exp'          => $seekerExp,
+            'job_exp'             => $jobExpRequired,
+            'portfolio_match'     => $portfolioMatch,
+            'has_cv'              => !empty($this->cv_path),
+            'composite'           => $composite,
         ];
     }
 }

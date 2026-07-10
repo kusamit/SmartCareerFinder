@@ -22,11 +22,16 @@ Route::get('/jobs/{job}', [JobController::class, 'show'])->name('jobs.show');
 Route::middleware('auth.seeker')->prefix('seeker')->name('seeker.')->group(function () {
     Route::get('/dashboard', [SeekerController::class, 'dashboard'])->name('dashboard');
     Route::get('/profile', [SeekerController::class, 'profile'])->name('profile');
+    Route::get('/profile/view', [SeekerController::class, 'profileView'])->name('profile.view');
     Route::post('/profile', [SeekerController::class, 'updateProfile'])->name('profile.update');
     Route::get('/jobs', [SeekerController::class, 'jobs'])->name('jobs');
     Route::post('/jobs/find-by-cv', [SeekerController::class, 'findByCv'])->name('jobs.cv');
     Route::post('/jobs/{job}/apply', [SeekerController::class, 'apply'])->name('jobs.apply');
     Route::get('/applications', [SeekerController::class, 'applications'])->name('applications');
+    Route::get('/education', [SeekerController::class, 'educationIndex'])->name('education');
+    Route::post('/education', [SeekerController::class, 'educationStore'])->name('education.store');
+    Route::put('/education/{education}', [SeekerController::class, 'educationUpdate'])->name('education.update');
+    Route::delete('/education/{education}', [SeekerController::class, 'educationDestroy'])->name('education.destroy');
 });
 
 // Job Provider routes
@@ -41,4 +46,5 @@ Route::middleware('auth.provider')->prefix('provider')->name('provider.')->group
     Route::delete('/jobs/{job}', [ProviderController::class, 'destroy'])->name('jobs.destroy');
     Route::get('/jobs/{job}/applicants', [ProviderController::class, 'applicants'])->name('jobs.applicants');
     Route::get('/applicants', [ProviderController::class, 'allApplicants'])->name('all_applicants');
+    Route::patch('/applications/{application}/status', [ProviderController::class, 'updateApplicationStatus'])->name('applications.status');
 });

@@ -5,7 +5,7 @@
 <a href="{{ route('seeker.dashboard') }}" class="nav-link">Dashboard</a>
 <a href="{{ route('seeker.jobs') }}" class="nav-link">Find Jobs</a>
 <a href="{{ route('seeker.applications') }}" class="nav-link">Applications</a>
-<a href="{{ route('seeker.profile') }}" class="nav-link">Profile</a>
+<a href="{{ route('seeker.profile.view') }}" class="nav-link">Profile</a>
 @endsection
 
 @push('styles')
@@ -293,16 +293,25 @@
             </div>
         </div>
 
-        @if($job->experience_required)
-        <div class="card-extra">
-            Experience required: {{ $job->experience_required }}
+        {{-- Experience + View Details Button --}}
+        <div class="card-extra" style="display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
+            @if($job->experience_required)
+            <span>Experience required: {{ $job->experience_required }}</span>
+            @endif
+
+            <a href="{{ route('jobs.show', $job->id) }}"
+               style="display:inline-flex; align-items:center; gap:5px; padding:5px 14px; background:#dcfce7; color:#15803d; font-weight:700; font-size:12px; border-radius:8px; border:1px solid #bbf7d0; text-decoration:none; transition:all 0.2s;"
+               onmouseover="this.style.background='#16a34a'; this.style.color='#fff'; this.style.borderColor='#16a34a';"
+               onmouseout="this.style.background='#dcfce7'; this.style.color='#15803d'; this.style.borderColor='#bbf7d0';">
+               View Full Details &rarr;
+            </a>
         </div>
-        @endif
     </div>
     @empty
     <div class="empty-state">
-        <h3>No jobs found</h3>
-        <p>Try updating your profile details, uploading a different CV, or check back later.</p>
+        <div style="font-size:40px; margin-bottom:12px;">🎉</div>
+        <h3>You've applied to all available jobs!</h3>
+        <p>No new open jobs to show right now. Check your <a href="{{ route('seeker.applications') }}" style="color:#6366f1; font-weight:700;">Applications</a> to track your progress, or check back later for new listings.</p>
     </div>
     @endforelse
 

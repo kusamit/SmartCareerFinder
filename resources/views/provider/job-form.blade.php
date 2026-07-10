@@ -8,7 +8,7 @@
 @endsection
 
 @push('styles')
-<link href="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.snow.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.snow.css" rel="stylesheet">
 <style>
     /* ===== PAGE BACKGROUND GLOW ===== */
     body { background: #f1f4f9 !important; }
@@ -321,7 +321,7 @@
         </div>
         @endif
 
-        <form method="POST"
+        <form id="jobForm" method="POST"
               action="{{ isset($job) ? route('provider.jobs.update', $job->id) : route('provider.jobs.store') }}">
             @csrf
             @if(isset($job)) @method('PUT') @endif
@@ -338,9 +338,9 @@
 
                 <div class="field-grid-2">
                     <div class="field-group">
-                        <label class="field-label">Location <span class="req">*</span></label>
+                        <label class="field-label">Location</label>
                         <input type="text" name="location" value="{{ old('location', $job->location ?? '') }}"
-                               class="field-input" placeholder="e.g. Kathmandu / Remote" required>
+                               class="field-input" placeholder="e.g. Kathmandu / Remote">
                     </div>
                     <div class="field-group">
                         <label class="field-label">Job Type <span class="req">*</span></label>
@@ -377,16 +377,8 @@
                         Skills
                         <span class="hint"> List skills, technologies, or tools required</span>
                     </label>
-                    <input type="hidden" name="key_skills" id="key_skills"
-                           value="{{ old('key_skills', $job->key_skills ?? '') }}">
+                    <input type="hidden" name="key_skills" id="key_skills" value="">
                     <div class="editor-wrapper">
-                        <div id="skills-toolbar" class="ql-toolbar ql-snow">
-                            <span class="ql-formats"><button class="ql-bold"></button><button class="ql-italic"></button><button class="ql-underline"></button></span>
-                            <span class="ql-formats"><button class="ql-list" value="ordered"></button><button class="ql-list" value="bullet"></button></span>
-                            <span class="ql-formats"><button class="ql-indent" value="-1"></button><button class="ql-indent" value="+1"></button></span>
-                            <span class="ql-formats"><select class="ql-align"></select></span>
-                            <span class="ql-formats"><button class="ql-blockquote"></button><button class="ql-clean"></button></span>
-                        </div>
                         <div id="skills-editor">{!! old('key_skills', $job->key_skills ?? '') !!}</div>
                     </div>
                 </div>
@@ -401,16 +393,8 @@
                         Job Description <span class="req">*</span>
                         <span class="hint"> Describe the role, responsibilities, and team</span>
                     </label>
-                    <input type="hidden" name="description" id="description"
-                           value="{{ old('description', $job->description ?? '') }}" required>
+                    <input type="hidden" name="description" id="description" value="">
                     <div class="editor-wrapper">
-                        <div id="description-toolbar" class="ql-toolbar ql-snow">
-                            <span class="ql-formats"><button class="ql-bold"></button><button class="ql-italic"></button><button class="ql-underline"></button></span>
-                            <span class="ql-formats"><button class="ql-list" value="ordered"></button><button class="ql-list" value="bullet"></button></span>
-                            <span class="ql-formats"><button class="ql-indent" value="-1"></button><button class="ql-indent" value="+1"></button></span>
-                            <span class="ql-formats"><select class="ql-align"></select></span>
-                            <span class="ql-formats"><button class="ql-blockquote"></button><button class="ql-clean"></button></span>
-                        </div>
                         <div id="description-editor">{!! old('description', $job->description ?? '') !!}</div>
                     </div>
                 </div>
@@ -425,16 +409,8 @@
                         Requirements <span class="req">*</span>
                         <span class="hint"> Qualifications, experience, technical skills</span>
                     </label>
-                    <input type="hidden" name="requirements" id="requirements"
-                           value="{{ old('requirements', $job->requirements ?? '') }}" required>
+                    <input type="hidden" name="requirements" id="requirements" value="">
                     <div class="editor-wrapper">
-                        <div id="requirements-toolbar" class="ql-toolbar ql-snow">
-                            <span class="ql-formats"><button class="ql-bold"></button><button class="ql-italic"></button><button class="ql-underline"></button></span>
-                            <span class="ql-formats"><button class="ql-list" value="ordered"></button><button class="ql-list" value="bullet"></button></span>
-                            <span class="ql-formats"><button class="ql-indent" value="-1"></button><button class="ql-indent" value="+1"></button></span>
-                            <span class="ql-formats"><select class="ql-align"></select></span>
-                            <span class="ql-formats"><button class="ql-blockquote"></button><button class="ql-clean"></button></span>
-                        </div>
                         <div id="requirements-editor">{!! old('requirements', $job->requirements ?? '') !!}</div>
                     </div>
                 </div>
@@ -454,60 +430,97 @@
 @endsection
 
 @push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.min.js" crossorigin="anonymous"></script>
 <script>
+    // Global error listener to display browser-side errors on the page
+    window.addEventListener('error', function(e) {
+        alert('JavaScript Error: ' + e.message + '\nFile: ' + e.filename + '\nLine: ' + e.lineno);
+    });
+
     document.addEventListener('DOMContentLoaded', function () {
 
-
-        // Helper: init a Quill editor against a pre-built toolbar element.
-        // Passing the toolbar's CSS selector string tells Quill v2 to adopt
-        // that existing DOM element instead of auto-generating a new one —
-        // this is the definitive fix for the Quill 2.x double-toolbar bug.
-        function initQuill(toolbarSelector, editorSelector, placeholder) {
-            const editorEl  = document.querySelector(editorSelector);
+        // Helper: init a Quill editor with auto-generated toolbar in JS.
+        function initQuill(editorSelector, placeholder) {
+            const editorEl = document.querySelector(editorSelector);
+            if (!editorEl) return null;
             const savedHTML = editorEl.innerHTML.trim();
             editorEl.innerHTML = '';  // clean slate before init
-            const q = new Quill(editorSelector, {
-                modules: { toolbar: toolbarSelector },
+            
+            const q = new Quill(editorEl, {
+                modules: {
+                    toolbar: [
+                        ['bold', 'italic', 'underline'],
+                        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                        [{ 'indent': '-1' }, { 'indent': '+1' }],
+                        ['blockquote', 'clean']
+                    ]
+                },
                 placeholder: placeholder,
                 theme: 'snow'
             });
+            
             if (savedHTML) {
-                q.clipboard.dangerouslyPasteHTML(savedHTML);
+                q.root.innerHTML = savedHTML;
             }
             return q;
         }
 
         // ===== INIT EDITORS =====
-        const skillsQuill = initQuill('#skills-toolbar', '#skills-editor',
+        const skillsQuill = initQuill('#skills-editor',
             'List the skills, technologies, frameworks, or tools required (e.g. Python, Django, REST API)...');
 
-        const descQuill = initQuill('#description-toolbar', '#description-editor',
+        const descQuill = initQuill('#description-editor',
             'Describe the role, responsibilities, and what a typical day looks like...');
 
-        const reqQuill = initQuill('#requirements-toolbar', '#requirements-editor',
+        const reqQuill = initQuill('#requirements-editor',
             'List the qualifications, experience level, and technical skills required...');
 
-        // ===== FORM SUBMIT: sync all hidden inputs =====
-        const form = document.querySelector('form');
-        form.addEventListener('submit', function (e) {
-            const descText = descQuill.getText().trim();
-            const reqText  = reqQuill.getText().trim();
+        // ===== INITIAL SYNC AND REAL-TIME SYNC =====
+        const syncHiddenInputs = () => {
+            const getEditorHTML = (selector) => {
+                const container = document.querySelector(selector);
+                if (!container) return '';
+                const editor = container.querySelector('.ql-editor');
+                return editor ? editor.innerHTML : container.innerHTML;
+            };
 
-            if (descText.length === 0) {
+            document.getElementById('key_skills').value   = getEditorHTML('#skills-editor');
+            document.getElementById('description').value  = getEditorHTML('#description-editor');
+            document.getElementById('requirements').value = getEditorHTML('#requirements-editor');
+        };
+
+        // Sync initially
+        syncHiddenInputs();
+
+        // Sync on changes
+        if (skillsQuill) skillsQuill.on('text-change', syncHiddenInputs);
+        if (descQuill)   descQuill.on('text-change', syncHiddenInputs);
+        if (reqQuill)    reqQuill.on('text-change', syncHiddenInputs);
+
+        // ===== FORM SUBMIT =====
+        const form = document.getElementById('jobForm');
+        form.addEventListener('submit', function (e) {
+            // Final sync
+            syncHiddenInputs();
+
+            // Validate by stripping HTML tags from the hidden input values
+            const stripHTML = function(html) {
+                return html.replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').trim();
+            };
+
+            const descVal = document.getElementById('description').value;
+            const reqVal  = document.getElementById('requirements').value;
+
+            if (stripHTML(descVal).length === 0) {
                 e.preventDefault();
                 alert('Please fill in the Job Description before submitting.');
                 return false;
             }
-            if (reqText.length === 0) {
+            if (stripHTML(reqVal).length === 0) {
                 e.preventDefault();
                 alert('Please fill in the Requirements before submitting.');
                 return false;
             }
-
-            document.getElementById('key_skills').value   = skillsQuill.root.innerHTML;
-            document.getElementById('description').value  = descQuill.root.innerHTML;
-            document.getElementById('requirements').value = reqQuill.root.innerHTML;
         });
     });
 </script>

@@ -135,6 +135,34 @@
         background: linear-gradient(135deg, #6366f1, #8b5cf6);
         box-shadow: 0 8px 20px rgba(99, 102, 241, 0.3);
     }
+
+    /* ── Quill rich-text display — shared across all pages ── */
+    .ql-editor-display { font-size: 14px; line-height: 1.75; word-break: break-word; }
+    .ql-editor-display p { margin: 0 0 0.6em; }
+    .ql-editor-display p:last-child { margin-bottom: 0; }
+    .ql-editor-display ul, .ql-editor-display ol { padding-left: 1.6em; margin: 0.4em 0 0.8em; }
+    .ql-editor-display ul { list-style-type: disc; }
+    .ql-editor-display ol { list-style-type: decimal; }
+    .ql-editor-display li { margin-bottom: 0.3em; }
+    .ql-editor-display .ql-indent-1 { padding-left: 3em; }
+    .ql-editor-display .ql-indent-2 { padding-left: 6em; }
+    .ql-editor-display .ql-indent-3 { padding-left: 9em; }
+    .ql-editor-display h1 { font-size: 1.5em; font-weight: 800; margin: 0.8em 0 0.4em; }
+    .ql-editor-display h2 { font-size: 1.25em; font-weight: 700; margin: 0.7em 0 0.35em; }
+    .ql-editor-display h3 { font-size: 1.1em; font-weight: 700; margin: 0.6em 0 0.3em; }
+    .ql-editor-display strong, .ql-editor-display b { font-weight: 700; }
+    .ql-editor-display em, .ql-editor-display i { font-style: italic; }
+    .ql-editor-display u { text-decoration: underline; }
+    .ql-editor-display s { text-decoration: line-through; }
+    .ql-editor-display blockquote {
+        border-left: 3px solid #6366f1; padding: 6px 14px;
+        margin: 0.6em 0; background: rgba(99,102,241,0.05);
+        border-radius: 0 8px 8px 0; font-style: italic; color: #475569;
+    }
+    .ql-editor-display a { color: #6366f1; text-decoration: underline; text-underline-offset: 2px; }
+    .ql-editor-display a:hover { color: #4f46e5; }
+    .ql-editor-display code { background: #f1f5f9; padding: 1px 5px; border-radius: 4px; font-family: monospace; font-size: 0.9em; }
+    .ql-editor-display pre { background: #0f172a; color: #e2e8f0; padding: 14px 18px; border-radius: 10px; overflow-x: auto; font-size: 13px; }
 </style>
     @stack('styles')
 </head>
@@ -180,13 +208,21 @@
 @if(session('success') || session('error'))
 <div class="max-w-7xl mx-auto px-4 pt-4">
     @if(session('success'))
-    <div class="bg-emerald-900/50 border border-emerald-600/50 text-emerald-300 px-5 py-3 rounded-xl text-sm">
-        {{ session('success') }}
+    <div class="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200/80 text-emerald-900 px-6 py-4 rounded-2xl shadow-sm flex items-start gap-3.5 transition-all duration-300">
+        <span class="flex-shrink-0 w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center text-white text-xs font-bold shadow-sm">✓</span>
+        <div class="flex-1">
+            <h4 class="font-bold text-sm text-emerald-950 mb-0.5">Success</h4>
+            <p class="text-xs text-emerald-800/90 leading-relaxed font-semibold m-0">{{ session('success') }}</p>
+        </div>
     </div>
     @endif
     @if(session('error'))
-    <div class="bg-red-900/50 border border-red-600/50 text-red-300 px-5 py-3 rounded-xl text-sm">
-        {{ session('error') }}
+    <div class="bg-gradient-to-r from-rose-50 to-red-50/80 border border-rose-200/80 text-rose-900 px-6 py-4 rounded-2xl shadow-sm flex items-start gap-3.5 transition-all duration-300">
+        <span class="flex-shrink-0 w-6 h-6 rounded-full bg-rose-500 flex items-center justify-center text-white text-xs font-bold shadow-sm">✕</span>
+        <div class="flex-1">
+            <h4 class="font-bold text-sm text-rose-950 mb-0.5">Error</h4>
+            <p class="text-xs text-rose-800/90 leading-relaxed font-semibold m-0">{{ session('error') }}</p>
+        </div>
     </div>
     @endif
 </div>
@@ -267,7 +303,7 @@
         <div class="grid md:grid-cols-2 gap-6 text-sm">
             {{-- Left: Matched --}}
             <div class="space-y-4">
-                <div class="text-[11px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 border-b border-emerald-100 dark:border-emerald-900/40 pb-1">✅ Matched Details</div>
+                <div class="text-[11px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 border-b border-emerald-100 dark:border-emerald-900/40 pb-1">Matched Details</div>
                 <div>
                     <span class="text-xs font-semibold text-slate-500 block mb-2">Matching Skills</span>
                     <div class="flex flex-wrap gap-1.5" id="modalMatchedSkills"></div>
@@ -277,7 +313,7 @@
 
             {{-- Right: Unmatched --}}
             <div class="space-y-4">
-                <div class="text-[11px] font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400 border-b border-rose-100 dark:border-rose-900/40 pb-1">❌ Unmatched / Missing</div>
+                <div class="text-[11px] font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400 border-b border-rose-100 dark:border-rose-900/40 pb-1">Unmatched / Missing</div>
                 <div>
                     <span class="text-xs font-semibold text-slate-500 block mb-2">Missing Required Skills</span>
                     <div class="flex flex-wrap gap-1.5" id="modalUnmatchedSkills"></div>
@@ -289,7 +325,125 @@
     </div>
 </div>
 
-@stack('scripts')
+{{-- ===== Application Status Tracking Modal ===== --}}
+<style>
+  #appStatusModal {
+      position: fixed; inset: 0; z-index: 9999;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(0,0,0,0.6);
+      backdrop-filter: blur(4px);
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.3s;
+  }
+  #appStatusModal.open { opacity: 1; pointer-events: all; }
+  #appStatusContainer {
+      background: #fff; border: 1.5px solid #e2e8f0;
+      border-radius: 28px; padding: 28px 28px 32px;
+      max-width: 440px; width: 100%; margin: 0 16px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+      transform: translateY(16px) scale(0.96);
+      transition: transform 0.3s, opacity 0.3s;
+      position: relative;
+  }
+  #appStatusModal.open #appStatusContainer { transform: translateY(0) scale(1); }
+
+  .ast-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 24px; }
+  .ast-title { font-size: 18px; font-weight: 800; color: #0f172a; margin: 0 0 4px; }
+  .ast-sub { font-size: 12px; color: #64748b; margin: 0; }
+  .ast-close { background: none; border: none; font-size: 22px; color: #94a3b8; cursor: pointer; padding: 0 0 0 12px; line-height: 1; }
+  .ast-close:hover { color: #0f172a; }
+
+  /* Timeline */
+  .ast-timeline { position: relative; padding-left: 36px; }
+  .ast-timeline::before {
+      content: ''; position: absolute; left: 15px; top: 16px; bottom: 16px;
+      width: 2px; background: #e2e8f0; border-radius: 2px;
+  }
+  .ast-step { display: flex; align-items: flex-start; gap: 16px; margin-bottom: 28px; position: relative; }
+  .ast-step:last-child { margin-bottom: 0; }
+
+  .ast-icon {
+      position: absolute; left: -36px; top: 0;
+      width: 32px; height: 32px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; font-weight: 800; flex-shrink: 0;
+      border: 2px solid #e2e8f0; background: #f8fafc; color: #94a3b8;
+      transition: all 0.3s;
+  }
+  .ast-icon.active  { background: #4f46e5; border-color: #4f46e5; color: #fff; box-shadow: 0 4px 12px rgba(79,70,229,0.35); }
+  .ast-icon.success { background: #10b981; border-color: #10b981; color: #fff; box-shadow: 0 4px 12px rgba(16,185,129,0.35); }
+  .ast-icon.danger  { background: #ef4444; border-color: #ef4444; color: #fff; box-shadow: 0 4px 12px rgba(239,68,68,0.35); }
+
+  .ast-step-title { font-size: 14px; font-weight: 700; color: #0f172a; margin: 0 0 3px; }
+  .ast-step-desc  { font-size: 12px; color: #64748b; margin: 0; line-height: 1.5; }
+
+  .ast-step.pending .ast-step-title { color: #94a3b8; }
+  .ast-step.pending .ast-step-desc  { color: #cbd5e1; }
+
+  /* Status summary badge at top */
+  .ast-status-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 5px 14px; border-radius: 999px; font-size: 12px; font-weight: 700;
+      margin-bottom: 20px; text-transform: capitalize;
+  }
+  .ast-status-pill::before { content: ''; width: 6px; height: 6px; border-radius: 50%; }
+  .ast-pill-applied     { background:#e0f2fe; color:#0369a1; border:1px solid #bae6fd; }
+  .ast-pill-applied::before { background:#0284c7; }
+  .ast-pill-reviewed    { background:#fef3c7; color:#b45309; border:1px solid #fde68a; }
+  .ast-pill-reviewed::before { background:#d97706; }
+  .ast-pill-shortlisted { background:#dcfce7; color:#15803d; border:1px solid #bbf7d0; }
+  .ast-pill-shortlisted::before { background:#16a34a; }
+  .ast-pill-rejected    { background:#fee2e2; color:#b91c1c; border:1px solid #fecaca; }
+  .ast-pill-rejected::before { background:#dc2626; }
+</style>
+
+<div id="appStatusModal">
+    <div id="appStatusContainer">
+        <div class="ast-header">
+            <div>
+                <h3 class="ast-title">Application Tracker</h3>
+                <p class="ast-sub" id="statusModalJob">Job Title &middot; Company</p>
+            </div>
+            <button class="ast-close" onclick="closeStatusModal()">&times;</button>
+        </div>
+
+        {{-- Current Status Pill --}}
+        <div id="statusPillWrap"></div>
+
+        {{-- Timeline --}}
+        <div class="ast-timeline">
+
+            {{-- Step 1: Applied --}}
+            <div class="ast-step" id="step-applied">
+                <div class="ast-icon" id="step-icon-applied">1</div>
+                <div>
+                    <p class="ast-step-title">Applied</p>
+                    <p class="ast-step-desc">Your application was submitted successfully.</p>
+                </div>
+            </div>
+
+            {{-- Step 2: Reviewed --}}
+            <div class="ast-step" id="step-reviewed">
+                <div class="ast-icon" id="step-icon-reviewed">2</div>
+                <div>
+                    <p class="ast-step-title">Reviewed</p>
+                    <p class="ast-step-desc">The recruiter has viewed and assessed your profile.</p>
+                </div>
+            </div>
+
+            {{-- Step 3: Decision --}}
+            <div class="ast-step" id="step-decision">
+                <div class="ast-icon" id="step-icon-decision">3</div>
+                <div>
+                    <p class="ast-step-title" id="step-title-decision">Decision</p>
+                    <p class="ast-step-desc" id="step-desc-decision">Pending recruiter decision.</p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
 
 <script>
   (function () {
@@ -319,7 +473,9 @@
 
   // ─── Build a matched / unmatched detail row ────────────────────────────────
   function matchRow(text, color) {
-    const dotColor = color === 'emerald' ? '#10b981' : '#e11d48';
+    const dotColor = color === 'emerald' ? '#10b981'
+                   : color === 'amber'   ? '#f59e0b'
+                   : '#e11d48';
     return `<div style="display:flex; align-items:flex-start; gap:8px; font-size:12.5px; line-height:1.5; color:#475569; margin-bottom:8px;">
         <span style="width:6px; height:6px; border-radius:50%; background:${dotColor}; flex-shrink:0; margin-top:6px;"></span>
         <span style="flex:1;">${text}</span>
@@ -337,11 +493,6 @@
       document.getElementById('modalSub').innerText = data.job_title
           ? `Aligned with: ${data.job_title}` : 'Candidate & Job alignment';
 
-      // Top score pills
-      const score = parseInt(data.score) || 0;
-      document.getElementById('modalScoreMatched').innerText   = `${score}%`;
-      document.getElementById('modalScoreUnmatched').innerText = `${100 - score}%`;
-
       // ── Scoring Breakdown ─────────────────────────────────────────────────
       const c = data.composite || {};
       const faissW   = c.faiss_weighted  ?? 0;
@@ -356,6 +507,15 @@
       const locMatch  = c.location_match  ?? data.location_match  ?? false;
       const portMatch = c.portfolio_match ?? data.portfolio_match ?? false;
       const domMatch  = c.domain_match    ?? data.role_match      ?? false;
+      // Which specific preferred role triggered the domain match (new multi-role support)
+      const domMatchedRole = c.domain_matched_role ?? data.role_matched_role ?? null;
+
+      // Compute actual total from breakdown components (fixes stale DB score showing 0)
+      const actualTotal = Math.min(100, Math.round(faissW + locPts + portPts + domPts));
+
+      // Update score pills using the real computed score
+      document.getElementById('modalScoreMatched').innerText   = `${actualTotal}%`;
+      document.getElementById('modalScoreUnmatched').innerText = `${100 - actualTotal}%`;
 
       let rows = '';
       rows += buildScoreRow('AI Semantic Score (FAISS)',  faissW, faissMax, faissW >= faissMax * 0.5);
@@ -364,7 +524,7 @@
       rows += buildScoreRow('Preferred Job Domain',        domPts,  domMax,  domMatch);
 
       document.getElementById('scoreBreakdownRows').innerHTML = rows;
-      document.getElementById('modalTotalScore').innerText    = `${score} / 100 pts`;
+      document.getElementById('modalTotalScore').innerText    = `${actualTotal} / 100 pts`;
 
       // ── Matched Skills ────────────────────────────────────────────────────
       const matchedCont = document.getElementById('modalMatchedSkills');
@@ -390,18 +550,41 @@
 
       // ── Matched detail rows (left) ─────────────────────────────────────────
       let matchedRows = '';
-      if (locMatch)  matchedRows += matchRow(`Location matches: <strong>${data.job_location || ''}</strong>`, 'emerald');
+      if (locMatch) {
+          const seekerCity = (data.seeker_location || '').trim();
+          const jobCity    = (data.job_location    || '').trim();
+          matchedRows += matchRow(`City match: Seeker (<strong>${seekerCity}</strong>) ↔ Job (<strong>${jobCity}</strong>)`, 'emerald');
+      }
       if (portMatch) matchedRows += matchRow(`Portfolio / Projects confirmed (CV uploaded or linked)`, 'emerald');
-      if (domMatch)  matchedRows += matchRow(`Job domain aligns with preferred role: <strong>${data.seeker_role || ''}</strong>`, 'emerald');
+      if (domMatch) {
+          // Show the specific role that matched (e.g. "Frontend Developer" not the full list)
+          const matchedRoleLabel = domMatchedRole || data.seeker_role || '';
+          matchedRows += matchRow(`Job domain aligns with preferred role: <strong>${matchedRoleLabel}</strong>`, 'emerald');
+      }
       if (data.exp_match !== false) matchedRows += matchRow(data.exp_message || 'Experience requirement met', 'emerald');
       if (!matchedRows) matchedRows = `<span style="font-size:11px;color:#94a3b8;font-style:italic;">No additional matches</span>`;
       document.getElementById('modalMatchedRows').innerHTML = matchedRows;
 
       // ── Unmatched detail rows (right) ──────────────────────────────────────
+      const JOB_TYPE_WORDS = ['remote', 'hybrid', 'onsite', 'on-site', 'work from home', 'wfh', 'anywhere', 'nationwide'];
       let unmatchedRows = '';
-      if (!locMatch)  unmatchedRows += matchRow(`Location mismatch — Job: <strong>${data.job_location || 'N/A'}</strong>, Seeker: <strong>${data.seeker_location || 'N/A'}</strong>`, 'rose');
+      if (!locMatch) {
+          const jobLocLower = (data.job_location || '').toLowerCase().trim();
+          const isJobTypeWord = JOB_TYPE_WORDS.some(w => jobLocLower === w || jobLocLower.startsWith(w));
+          if (isJobTypeWord) {
+              unmatchedRows += matchRow(`No city specified for this job (<strong>${data.job_location || 'N/A'}</strong> is a work type, not a city) — location bonus not applicable`, 'amber');
+          } else {
+              unmatchedRows += matchRow(`City mismatch — Job: <strong>${data.job_location || 'N/A'}</strong>, Seeker: <strong>${data.seeker_location || 'N/A'}</strong>`, 'rose');
+          }
+      }
       if (!portMatch) unmatchedRows += matchRow(`No portfolio/projects found — upload a CV or add GitHub/portfolio link`, 'rose');
-      if (!domMatch)  unmatchedRows += matchRow(`Job domain doesn't align — Preferred: <strong>${data.seeker_role || 'N/A'}</strong>`, 'rose');
+      if (!domMatch) {
+          // Show all preferred roles when none matched
+          const allRoles = (data.seeker_roles && data.seeker_roles.length)
+              ? data.seeker_roles.join(', ')
+              : (data.seeker_role || 'N/A');
+          unmatchedRows += matchRow(`Job domain doesn't match any preferred role — Preferred: <strong>${allRoles}</strong>`, 'rose');
+      }
       if (data.exp_match === false) unmatchedRows += matchRow(data.exp_message || 'Experience requirement not met', 'rose');
       if (!unmatchedRows) unmatchedRows = `<span style="font-size:11px;color:#94a3b8;font-style:italic;">No gaps found</span>`;
       document.getElementById('modalUnmatchedRows').innerHTML = unmatchedRows;
@@ -418,10 +601,82 @@
       container.classList.add('translate-y-4', 'scale-95');
   }
 
-  // Close on outside click; intercept [data-match] elements
+  // ─── Status Modal Helpers ────────────────────────────────────────────────
+  function openStatusModal(data) {
+      const modal = document.getElementById('appStatusModal');
+
+      // Set job and company header
+      document.getElementById('statusModalJob').innerHTML =
+          `<strong>${data.job_title}</strong> &middot; ${data.company}`;
+
+      const status = (data.status || 'applied').toLowerCase();
+
+      // Status pill at top
+      const pillClasses = {
+          applied:     'ast-pill-applied',
+          reviewed:    'ast-pill-reviewed',
+          shortlisted: 'ast-pill-shortlisted',
+          rejected:    'ast-pill-rejected'
+      };
+      document.getElementById('statusPillWrap').innerHTML =
+          `<div class="ast-status-pill ${pillClasses[status] || 'ast-pill-applied'}">
+              Current Status: ${status}
+           </div>`;
+
+      // Helper to set icon state
+      const setIcon = (iconId, state, label) => {
+          const el = document.getElementById(iconId);
+          el.className = `ast-icon ${state}`;
+          el.innerHTML = label;
+      };
+
+      const setStep = (stepId, state) => {
+          document.getElementById(stepId).className = `ast-step ${state === 'pending' ? 'pending' : ''}`;
+      };
+
+      // Reset decision text
+      document.getElementById('step-title-decision').innerText = 'Decision';
+      document.getElementById('step-desc-decision').innerText  = 'Pending recruiter decision.';
+
+      if (status === 'applied') {
+          setIcon('step-icon-applied',  'active',  '●');  setStep('step-applied',  '');
+          setIcon('step-icon-reviewed', '',        '2');   setStep('step-reviewed', 'pending');
+          setIcon('step-icon-decision', '',        '3');   setStep('step-decision', 'pending');
+
+      } else if (status === 'reviewed') {
+          setIcon('step-icon-applied',  'success', '✓');  setStep('step-applied',  '');
+          setIcon('step-icon-reviewed', 'active',  '●');  setStep('step-reviewed', '');
+          setIcon('step-icon-decision', '',        '3');   setStep('step-decision', 'pending');
+
+      } else if (status === 'shortlisted') {
+          setIcon('step-icon-applied',  'success', '✓');  setStep('step-applied',  '');
+          setIcon('step-icon-reviewed', 'success', '✓');  setStep('step-reviewed', '');
+          setIcon('step-icon-decision', 'success', '✓');  setStep('step-decision', '');
+          document.getElementById('step-title-decision').innerText = 'Shortlisted';
+          document.getElementById('step-desc-decision').innerText  = 'Congratulations! You have been shortlisted for interviews.';
+
+      } else if (status === 'rejected') {
+          setIcon('step-icon-applied',  'success', '✓');  setStep('step-applied',  '');
+          setIcon('step-icon-reviewed', 'success', '✓');  setStep('step-reviewed', '');
+          setIcon('step-icon-decision', 'danger',  '✗');  setStep('step-decision', '');
+          document.getElementById('step-title-decision').innerText = 'Rejected';
+          document.getElementById('step-desc-decision').innerText  = 'We regret to inform you that you were not selected for this role.';
+      }
+
+      modal.classList.add('open');
+  }
+
+  function closeStatusModal() {
+      document.getElementById('appStatusModal').classList.remove('open');
+  }
+
+  // Close on outside click; intercept [data-match] and [data-app-status] elements
   document.addEventListener('click', function(e) {
       const modal = document.getElementById('matchDetailsModal');
       if (e.target === modal) { closeMatchModal(); return; }
+
+      const statusModal = document.getElementById('appStatusModal');
+      if (e.target === statusModal) { closeStatusModal(); return; }
 
       const matchBtn = e.target.closest('[data-match]');
       if (matchBtn) {
@@ -430,6 +685,16 @@
               openMatchModal(data);
           } catch(err) {
               console.error('Failed to parse match details:', err);
+          }
+      }
+
+      const statusBtn = e.target.closest('[data-app-status]');
+      if (statusBtn) {
+          try {
+              const data = JSON.parse(statusBtn.getAttribute('data-app-status'));
+              openStatusModal(data);
+          } catch(err) {
+              console.error('Failed to parse status details:', err);
           }
       }
   });

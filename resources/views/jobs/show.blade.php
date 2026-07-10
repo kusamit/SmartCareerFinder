@@ -18,50 +18,52 @@
 @endsection
 
 @section('content')
-<div class="max-w-4xl mx-auto fade-up">
+<div class="max-w-5xl mx-auto fade-up">
     {{-- Header Navigation --}}
     <div class="mb-6">
         @if(session('user_id') && isset($user) && $user->role === 'seeker')
-            <a href="{{ route('seeker.jobs') }}" class="text-slate-400 hover:text-indigo-400 text-sm flex items-center gap-1.5 transition-colors">
-                ← Back to Job Matches
+            <a href="{{ route('seeker.jobs') }}" class="inline-flex items-center text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 text-sm font-semibold transition-colors no-underline">
+                &larr; Back to Job Matches
             </a>
         @elseif(session('user_id') && isset($user) && $user->role === 'provider')
-            <a href="{{ route('provider.jobs') }}" class="text-slate-400 hover:text-indigo-400 text-sm flex items-center gap-1.5 transition-colors">
-                ← Back to My Jobs
+            <a href="{{ route('provider.jobs') }}" class="inline-flex items-center text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 text-sm font-semibold transition-colors no-underline">
+                &larr; Back to My Jobs
             </a>
         @else
-            <a href="{{ url('/') }}" class="text-slate-400 hover:text-indigo-400 text-sm flex items-center gap-1.5 transition-colors">
-                ← Back to Home
+            <a href="{{ url('/') }}" class="inline-flex items-center text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 text-sm font-semibold transition-colors no-underline">
+                &larr; Back to Home
             </a>
         @endif
     </div>
 
     {{-- Main Job Header Card --}}
-    <div class="card p-8 mb-8 border-indigo-500/20 bg-gradient-to-br from-indigo-900/10 via-transparent to-transparent">
-        <div class="flex flex-col md:flex-row md:items-start justify-between gap-6">
+    <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-8 mb-8 shadow-sm transition-all duration-300">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-8">
             <div class="flex-1 min-w-0">
-                <div class="flex flex-wrap items-center gap-3 mb-3">
-                    <span class="badge {{ $job->isOpen() ? 'bg-emerald-900/50 text-emerald-300 border border-emerald-700/50' : 'bg-red-900/50 text-red-300 border border-red-700/50' }}">
-                        {{ ucfirst($job->status) }}
+                <div class="flex flex-wrap items-center gap-3 mb-4">
+                    <span class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider {{ $job->isOpen() ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/30' : 'bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 border border-red-100 dark:border-red-900/30' }}">
+                        {{ $job->status }}
                     </span>
-                    <span class="badge bg-slate-800 text-slate-400 border border-slate-700 capitalize">{{ $job->type }}</span>
+                    <span class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 capitalize">
+                        {{ $job->type }}
+                    </span>
                 </div>
-                <h1 class="text-3xl font-bold tracking-tight text-white mb-2">{{ $job->title }}</h1>
-                <div class="text-slate-300 font-medium text-lg mb-4">🏢 {{ $job->company }}</div>
+                <h1 class="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight mb-2">{{ $job->title }}</h1>
+                <div class="text-indigo-600 dark:text-indigo-400 font-bold text-lg mb-6">{{ $job->company }}</div>
                 
                 {{-- Quick Stats Grid --}}
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 rounded-xl bg-slate-800/30 border border-slate-700/30 text-sm">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800/60 text-sm">
                     <div>
-                        <span class="text-slate-500 block mb-0.5">Location</span>
-                        <span class="text-white font-medium">{{ $job->location }}</span>
+                        <span class="text-slate-400 dark:text-slate-500 block text-[10px] font-bold uppercase tracking-wider mb-1">Location</span>
+                        <span class="text-slate-800 dark:text-slate-200 font-semibold">{{ $job->location }}</span>
                     </div>
                     <div>
-                        <span class="text-slate-500 block mb-0.5">Salary Range</span>
-                        <span class="text-white font-medium">{{ $job->salary_range ?? 'Not specified' }}</span>
+                        <span class="text-slate-400 dark:text-slate-500 block text-[10px] font-bold uppercase tracking-wider mb-1">Salary Range</span>
+                        <span class="text-slate-800 dark:text-slate-200 font-semibold">{{ $job->salary_range ?? 'Not specified' }}</span>
                     </div>
                     <div>
-                        <span class="text-slate-500 block mb-0.5">Experience Required</span>
-                        <span class="text-white font-medium">{{ $job->experience_required ?? 'Not specified' }}</span>
+                        <span class="text-slate-400 dark:text-slate-500 block text-[10px] font-bold uppercase tracking-wider mb-1">Experience Required</span>
+                        <span class="text-slate-800 dark:text-slate-200 font-semibold">{{ $job->experience_required ?? 'Not specified' }}</span>
                     </div>
                 </div>
             </div>
@@ -69,30 +71,43 @@
             {{-- Match Score & Application Action --}}
             @if(session('user_id') && isset($user) && $user->role === 'seeker')
                 @php
-                    $score = $user->matchScore($job);
-                    $color = $score >= 70 ? 'emerald' : ($score >= 40 ? 'amber' : 'slate');
+                    $score   = $matchScore ?? 0;
                     $applied = \App\Models\Application::where('job_id', $job->id)->where('user_id', $user->id)->exists();
+                    
+                    // Explicit classes to prevent Tailwind purging issues
+                    if ($score >= 70) {
+                        $scoreColorClass = 'text-emerald-600 dark:text-emerald-400';
+                        $barColorClass = 'bg-emerald-500';
+                    } elseif ($score >= 40) {
+                        $scoreColorClass = 'text-amber-600 dark:text-amber-400';
+                        $barColorClass = 'bg-amber-500';
+                    } else {
+                        $scoreColorClass = 'text-slate-600 dark:text-slate-400';
+                        $barColorClass = 'bg-slate-500';
+                    }
                 @endphp
-                <div class="shrink-0 text-center md:text-right md:min-w-[160px] p-6 rounded-2xl bg-indigo-950/20 border border-indigo-900/40">
-                    <div class="text-4xl font-bold mono text-{{ $color }}-400 mb-1">{{ $score }}%</div>
-                    <div class="text-slate-400 text-xs mb-4">Match Score</div>
-                    <div class="match-bar w-full max-w-[120px] mx-auto md:mr-0 mb-5">
-                        <div class="match-fill bg-{{ $color }}-500" style="width: {{ $score }}%"></div>
+                <div class="shrink-0 text-center p-6 rounded-2xl bg-slate-50 dark:bg-slate-800/30 border border-slate-100 dark:border-slate-800 w-full md:w-auto md:min-w-[180px]">
+                    <div class="text-5xl font-extrabold mono {{ $scoreColorClass }} mb-1">{{ $score }}%</div>
+                    <div class="text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-wider mb-4">Match Score</div>
+                    <div class="w-full bg-slate-200 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden mb-6">
+                        <div class="h-full rounded-full {{ $barColorClass }} transition-all duration-500" style="width: {{ $score }}%"></div>
                     </div>
 
                     @if($applied)
-                        <span class="btn-outline w-full justify-center text-emerald-400 border-emerald-800 cursor-default flex items-center gap-1.5">
-                            ✓ Applied
-                        </span>
+                        <div class="w-full py-3 px-4 rounded-xl font-bold text-sm text-center bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/50">
+                            Applied
+                        </div>
                     @elseif($job->isOpen())
                         <form method="POST" action="{{ route('seeker.jobs.apply', $job->id) }}">
                             @csrf
-                            <button type="submit" class="btn-primary w-full justify-center flex">
+                            <button type="submit" class="w-full py-3 px-4 rounded-xl font-bold text-sm text-center bg-indigo-600 hover:bg-indigo-700 text-white shadow-md hover:shadow-lg transition-all duration-200 cursor-pointer border-none">
                                 Apply Now
                             </button>
                         </form>
                     @else
-                        <span class="badge bg-red-900/50 text-red-300 w-full justify-center py-2.5">Closed</span>
+                        <div class="w-full py-3 px-4 rounded-xl font-bold text-sm text-center bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800/50">
+                            Closed
+                        </div>
                     @endif
                 </div>
             @endif
@@ -104,81 +119,139 @@
         {{-- Left Description & Requirements --}}
         <div class="lg:col-span-2 space-y-8">
             {{-- Job Description --}}
-            <div class="card p-8">
-                <h2 class="text-xl font-bold mb-4 pb-2 border-b border-slate-700/50 text-white flex items-center gap-2">
-                    📄 Job Description
+            <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-8 shadow-sm">
+                <h2 class="text-xl font-bold mb-5 pb-3 border-b border-slate-100 dark:border-slate-800 text-slate-950 dark:text-white tracking-tight">
+                    Job Description
                 </h2>
-                <div class="prose prose-invert text-slate-300 text-sm leading-relaxed ql-editor-display">
+                <div class="prose dark:prose-invert text-slate-650 dark:text-slate-350 text-sm leading-relaxed ql-editor-display">
                     {!! $job->description !!}
                 </div>
             </div>
 
             {{-- Requirements --}}
-            <div class="card p-8">
-                <h2 class="text-xl font-bold mb-4 pb-2 border-b border-slate-700/50 text-white flex items-center gap-2">
-                    📋 Requirements & Qualifications
+            <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-8 shadow-sm">
+                <h2 class="text-xl font-bold mb-5 pb-3 border-b border-slate-100 dark:border-slate-800 text-slate-950 dark:text-white tracking-tight">
+                    Requirements &amp; Qualifications
                 </h2>
-                <div class="prose prose-invert text-slate-300 text-sm leading-relaxed ql-editor-display">
+                <div class="prose dark:prose-invert text-slate-650 dark:text-slate-350 text-sm leading-relaxed ql-editor-display">
                     {!! $job->requirements !!}
                 </div>
             </div>
         </div>
 
         {{-- Right Side info (Key Skills, metadata) --}}
-        <div class="space-y-6">
-            <div class="card p-6">
-                <h3 class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4">🔑 Key Skills</h3>
+        <div class="space-y-8">
+            {{-- Key Skills --}}
+            <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 shadow-sm">
+                <h3 class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-4">Key Skills</h3>
                 @if($job->key_skills)
                     <div class="flex flex-wrap gap-2">
                         @foreach($job->skillsArray() as $skill)
-                            <span class="badge bg-indigo-900/40 text-indigo-300 border border-indigo-700/40">{{ $skill }}</span>
+                            <span class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-indigo-50/80 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border border-indigo-100/50 dark:border-indigo-900/30">
+                                {{ $skill }}
+                            </span>
                         @endforeach
                     </div>
                 @else
-                    <span class="text-slate-500 text-sm">No specific skills listed.</span>
+                    <span class="text-slate-450 dark:text-slate-500 text-sm italic">No specific skills listed.</span>
                 @endif
             </div>
 
-            <div class="card p-6 text-xs text-slate-500 space-y-2">
-                <div>Posted: {{ $job->created_at->format('M d, Y') }}</div>
-                <div>Last updated: {{ $job->updated_at->diffForHumans() }}</div>
-                <div>Job ID: #{{ $job->id }}</div>
+            {{-- Metadata info --}}
+            <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 shadow-sm text-xs text-slate-500 dark:text-slate-400 space-y-3 font-medium">
+                <div class="flex justify-between py-1 border-b border-slate-55 dark:border-slate-800">
+                    <span>Posted</span>
+                    <span class="text-slate-800 dark:text-slate-300 font-semibold">{{ $job->created_at->format('M d, Y') }}</span>
+                </div>
+                <div class="flex justify-between py-1 border-b border-slate-55 dark:border-slate-800">
+                    <span>Last updated</span>
+                    <span class="text-slate-800 dark:text-slate-300 font-semibold">{{ $job->updated_at->diffForHumans() }}</span>
+                </div>
+                <div class="flex justify-between py-1">
+                    <span>Job ID</span>
+                    <span class="text-slate-800 dark:text-slate-300 font-semibold">#{{ $job->id }}</span>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
 <style>
-    /* Styling to ensure Quill HTML renders correctly (bullets, indentations, etc.) */
-    .ql-editor-display ul {
-        list-style-type: disc !important;
-        padding-left: 1.5em !important;
-        margin-top: 0.5em !important;
-        margin-bottom: 0.5em !important;
+    /* ── Quill-generated HTML display — exact mirror of Quill's own .ql-editor styles ── */
+    .ql-editor-display {
+        font-size: 14px;
+        line-height: 1.75;
+        color: inherit;
+        word-break: break-word;
     }
-    .ql-editor-display ol {
-        list-style-type: decimal !important;
-        padding-left: 1.5em !important;
-        margin-top: 0.5em !important;
-        margin-bottom: 0.5em !important;
-    }
-    .ql-editor-display li {
-        margin-bottom: 0.25em !important;
-    }
-    .ql-editor-display h1 {
-        font-size: 1.5em !important;
-        font-weight: bold !important;
-        margin-top: 1em !important;
-        margin-bottom: 0.5em !important;
-    }
-    .ql-editor-display h2 {
-        font-size: 1.25em !important;
-        font-weight: bold !important;
-        margin-top: 0.8em !important;
-        margin-bottom: 0.4em !important;
-    }
+
+    /* Paragraphs */
     .ql-editor-display p {
-        margin-bottom: 0.75em !important;
+        margin: 0 0 0.6em;
+    }
+    .ql-editor-display p:last-child { margin-bottom: 0; }
+
+    /* Lists */
+    .ql-editor-display ul,
+    .ql-editor-display ol {
+        padding-left: 1.6em;
+        margin: 0.4em 0 0.8em;
+    }
+    .ql-editor-display ul { list-style-type: disc; }
+    .ql-editor-display ol { list-style-type: decimal; }
+    .ql-editor-display li { margin-bottom: 0.3em; }
+
+    /* Nested list indent levels (Quill uses data-list + class ql-indent-N) */
+    .ql-editor-display .ql-indent-1 { padding-left: 3em; }
+    .ql-editor-display .ql-indent-2 { padding-left: 6em; }
+    .ql-editor-display .ql-indent-3 { padding-left: 9em; }
+
+    /* Headings */
+    .ql-editor-display h1 { font-size: 1.5em; font-weight: 800; margin: 0.8em 0 0.4em; }
+    .ql-editor-display h2 { font-size: 1.25em; font-weight: 700; margin: 0.7em 0 0.35em; }
+    .ql-editor-display h3 { font-size: 1.1em; font-weight: 700; margin: 0.6em 0 0.3em; }
+
+    /* Inline styles */
+    .ql-editor-display strong, .ql-editor-display b { font-weight: 700; }
+    .ql-editor-display em, .ql-editor-display i { font-style: italic; }
+    .ql-editor-display u { text-decoration: underline; }
+    .ql-editor-display s { text-decoration: line-through; }
+
+    /* Blockquote */
+    .ql-editor-display blockquote {
+        border-left: 3px solid #6366f1;
+        padding: 6px 14px;
+        margin: 0.6em 0;
+        background: rgba(99,102,241,0.05);
+        border-radius: 0 8px 8px 0;
+        font-style: italic;
+        color: #475569;
+    }
+
+    /* Links */
+    .ql-editor-display a {
+        color: #6366f1;
+        text-decoration: underline;
+        text-underline-offset: 2px;
+    }
+    .ql-editor-display a:hover { color: #4f46e5; }
+
+    /* Code */
+    .ql-editor-display code {
+        background: #f1f5f9;
+        padding: 1px 5px;
+        border-radius: 4px;
+        font-family: monospace;
+        font-size: 0.9em;
+    }
+    .ql-editor-display pre {
+        background: #0f172a;
+        color: #e2e8f0;
+        padding: 14px 18px;
+        border-radius: 10px;
+        overflow-x: auto;
+        font-size: 13px;
     }
 </style>
+
 @endsection

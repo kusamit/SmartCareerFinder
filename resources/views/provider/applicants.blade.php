@@ -106,7 +106,7 @@
         border-left: 1px solid #f1f5f9;
     }
     .stat-label-sm { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #94a3b8; margin-bottom: 4px; }
-    .stat-value-sm { font-size: 15px; font-weight: 800; color: #0f172a; }
+    .stat-value-sm { font-size: 15px; font-weight: 800; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 90px; }
 
     /* ===== MATCH SCORE ===== */
     .match-wrapper { text-align: center; flex-shrink: 0; padding: 0 12px; border-left: 1px solid #f1f5f9; }
@@ -153,6 +153,37 @@
     }
     .empty-state h3 { font-size: 18px; font-weight: 700; color: #0f172a; margin-bottom: 8px; }
     .empty-state p  { font-size: 13px; color: #94a3b8; }
+
+    /* ===== APPLICANT STATUS CONTROL ===== */
+    .status-action-col { flex-shrink: 0; padding: 0 0 0 12px; border-left: 1px solid #f1f5f9; min-width: 160px; }
+    .status-action-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #94a3b8; margin-bottom: 6px; }
+    .status-select {
+        width: 100%; padding: 6px 10px; border: 1.5px solid #e2e8f0; border-radius: 10px;
+        font-size: 12px; font-weight: 700; color: #0f172a; background: #f8fafc;
+        cursor: pointer; outline: none; transition: border-color 0.2s;
+    }
+    .status-select:hover { border-color: #a5b4fc; }
+    .status-select:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
+    .status-select option[value="applied"]     { color: #0369a1; font-weight: 700; }
+    .status-select option[value="reviewed"]    { color: #b45309; font-weight: 700; }
+    .status-select option[value="shortlisted"] { color: #15803d; font-weight: 700; }
+    .status-select option[value="rejected"]    { color: #b91c1c; font-weight: 700; }
+    .status-apply-btn {
+        width: 100%; margin-top: 6px; padding: 5px 8px;
+        background: linear-gradient(135deg, #4f46e5, #7c3aed);
+        color: #fff; font-size: 11px; font-weight: 700; border: none;
+        border-radius: 8px; cursor: pointer; transition: opacity 0.2s;
+    }
+    .status-apply-btn:hover { opacity: 0.85; }
+    .applicant-current-status {
+        display: inline-flex; align-items: center; gap: 4px;
+        padding: 2px 8px; border-radius: 999px; font-size: 10px; font-weight: 700;
+        text-transform: capitalize; margin-bottom: 5px;
+    }
+    .cs-applied     { background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; }
+    .cs-reviewed    { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
+    .cs-shortlisted { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
+    .cs-rejected    { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
 </style>
 @endpush
 
@@ -175,6 +206,20 @@
         @endif
     </div>
 
+    {{-- ===== APPLICANT SEARCH BAR ===== --}}
+    <div style="background:#fff; border: 1.5px solid #f1f5f9; border-radius: 20px; padding: 18px 24px; margin-bottom: 24px; box-shadow:0 2px 12px rgba(0,0,0,0.03);">
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; align-items: end;">
+            <div>
+                <label style="font-size: 10px; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#94a3b8; display:block; margin-bottom:6px;">Search by Name</label>
+                <input type="text" id="searchName" placeholder="e.g. Ramesh..." style="width:100%; border:1.5px solid #e2e8f0; border-radius:10px; padding:8px 12px; font-size:13px; color:#1e293b; outline:none; transition:all 0.2s;" oninput="filterApplicants()">
+            </div>
+            <div>
+                <label style="font-size: 10px; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#94a3b8; display:block; margin-bottom:6px;">Filter by Applied Date</label>
+                <input type="date" id="searchDate" style="width:100%; border:1.5px solid #e2e8f0; border-radius:10px; padding:8px 12px; font-size:13px; color:#1e293b; outline:none; transition:all 0.2s;" onchange="filterApplicants()">
+            </div>
+        </div>
+    </div>
+
     {{-- ===== JOB SUMMARY ===== --}}
     <div class="job-summary">
         <div class="job-summary-grid">
@@ -192,24 +237,34 @@
             </div>
         </div>
         @if($job->key_skills)
-        <div style="display:flex; flex-wrap:wrap; gap:6px;">
+        <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom: 16px;">
             @foreach($job->skillsArray() as $skill)
             <span class="skill-chip">{{ $skill }}</span>
             @endforeach
         </div>
         @endif
-    </div>
 
-    {{-- ===== APPLICANT SEARCH BAR ===== --}}
-    <div style="background:#fff; border: 1.5px solid #f1f5f9; border-radius: 20px; padding: 18px 24px; margin-bottom: 24px; box-shadow:0 2px 12px rgba(0,0,0,0.03);">
-        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; align-items: end;">
-            <div>
-                <label style="font-size: 10px; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#94a3b8; display:block; margin-bottom:6px;">Search by Name</label>
-                <input type="text" id="searchName" placeholder="e.g. Ramesh..." style="width:100%; border:1.5px solid #e2e8f0; border-radius:10px; padding:8px 12px; font-size:13px; color:#1e293b; outline:none; transition:all 0.2s;" oninput="filterApplicants()">
-            </div>
-            <div>
-                <label style="font-size: 10px; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#94a3b8; display:block; margin-bottom:6px;">Filter by Applied Date</label>
-                <input type="date" id="searchDate" style="width:100%; border:1.5px solid #e2e8f0; border-radius:10px; padding:8px 12px; font-size:13px; color:#1e293b; outline:none; transition:all 0.2s;" onchange="filterApplicants()">
+        {{-- Job details toggle --}}
+        <div style="border-top: 1px solid #f1f5f9; padding-top: 18px; margin-top: 14px; text-align: center;">
+            <button type="button" onclick="toggleJobDetails()" style="background: linear-gradient(135deg, #16a34a, #15803d); border:none; color:#fff; font-weight:700; font-size:15px; display:inline-flex; align-items:center; gap:8px; cursor:pointer; outline:none; padding:12px 32px; border-radius:12px; box-shadow: 0 4px 14px rgba(22,163,74,0.35); transition: all 0.2s; letter-spacing:0.01em;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(22,163,74,0.45)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 14px rgba(22,163,74,0.35)';">
+                <span id="toggle-icon">▼</span> <span id="toggle-text">Show Full Job Details</span>
+            </button>
+            
+            <div id="job-details-content" style="display:none; margin-top:16px; gap:20px; flex-direction:column; border-top: 1px solid #f1f5f9; padding-top:16px; text-align:left;">
+                <div style="display:grid; grid-template-columns: 1fr; gap:20px;">
+                    <div>
+                        <h4 style="font-size:11px; font-weight:800; color:#0f172a; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:8px;">Job Description</h4>
+                        <div class="ql-editor-display" style="font-size:13px; color:#475569; background:#f8fafc; padding:16px; border-radius:12px; border:1px solid #f1f5f9;">
+                            {!! $job->description !!}
+                        </div>
+                    </div>
+                    <div>
+                        <h4 style="font-size:11px; font-weight:800; color:#0f172a; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:8px;">Requirements & Qualifications</h4>
+                        <div class="ql-editor-display" style="font-size:13px; color:#475569; background:#f8fafc; padding:16px; border-radius:12px; border:1px solid #f1f5f9;">
+                            {!! $job->requirements !!}
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -251,8 +306,8 @@
             @endif
             @if($app->seeker->skills)
             <div class="applicant-skills">
-                @foreach(array_slice(explode(',', $app->seeker->skills), 0, 5) as $skill)
-                <span class="applicant-skill">{{ trim($skill) }}</span>
+                @foreach(array_slice($app->seeker->skillsArray(), 0, 5) as $skill)
+                <span class="applicant-skill">{{ $skill }}</span>
                 @endforeach
             </div>
             @endif
@@ -261,7 +316,7 @@
         {{-- Experience --}}
         <div class="applicant-stat">
             <div class="stat-label-sm">Experience</div>
-            <div class="stat-value-sm">{{ $app->seeker->experience_years ?? '—' }} yr(s)</div>
+            <div class="stat-value-sm">{{ $app->seeker->experienceSummary() }}</div>
         </div>
 
         {{-- Match Score (Clickable) --}}
@@ -282,6 +337,22 @@
             <div class="stat-label-sm">Applied</div>
             <div class="applied-date">{{ $app->created_at->format('M d') }}</div>
             <div class="applied-year">{{ $app->created_at->format('Y') }}</div>
+        </div>
+
+        {{-- Status Update --}}
+        @php $csClass = 'cs-' . $app->status; @endphp
+        <div class="status-action-col">
+            <div class="status-action-label">Application Status</div>
+            <div class="applicant-current-status {{ $csClass }}">{{ $app->status }}</div>
+            <form method="POST" action="{{ route('provider.applications.status', $app->id) }}">
+                @csrf @method('PATCH')
+                <select name="status" class="status-select" onchange="this.form.submit()">
+                    <option value="applied"     {{ $app->status === 'applied'     ? 'selected' : '' }}>Applied</option>
+                    <option value="reviewed"    {{ $app->status === 'reviewed'    ? 'selected' : '' }}>Reviewed</option>
+                    <option value="shortlisted" {{ $app->status === 'shortlisted' ? 'selected' : '' }}>Shortlisted</option>
+                    <option value="rejected"    {{ $app->status === 'rejected'    ? 'selected' : '' }}>Rejected</option>
+                </select>
+            </form>
         </div>
 
     </div>
@@ -310,6 +381,24 @@
 
           card.style.display = ok ? '' : 'none';
       });
+  }
+
+  function toggleJobDetails() {
+      const content = document.getElementById('job-details-content');
+      const icon    = document.getElementById('toggle-icon');
+      const text    = document.getElementById('toggle-text');
+      if (!content) return;
+
+      const isHidden = content.style.display === 'none' || !content.style.display;
+      if (isHidden) {
+          content.style.display = 'flex';
+          icon.textContent = '▲';
+          text.textContent = 'Hide Job Details';
+      } else {
+          content.style.display = 'none';
+          icon.textContent = '▼';
+          text.textContent = 'Show Full Job Details';
+      }
   }
 </script>
 @endpush

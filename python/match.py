@@ -29,6 +29,10 @@ STOPWORDS = set([
 ])
 
 # Category Anchors for Block Projection
+# NOTE: Dimensions 6 (Projects/Portfolio) and 7 (Location) are intentionally
+# excluded from FAISS — they are scored separately as bonus points in the
+# PHP composite scorer (+10 pts each if matched), so embedding them here
+# would cause double-counting in the final match score.
 CATEGORIES = {
     # Block A: Experience & Requirements (3 dimensions)
     0: {"name": "Experience Level/Seniority/Requirements", "anchors": ["senior", "lead", "principal", "manager", "director", "head", "architect", "expert", "vp", "chief", "executive", "sr", "required", "qualification", "must", "needed", "should", "ability", "skillset", "requisite", "criteria", "eligibility", "qualification", "minimum"]},
@@ -40,11 +44,9 @@ CATEGORIES = {
     4: {"name": "Job Profile Role Type", "anchors": ["web", "frontend", "backend", "fullstack", "stack", "mobile", "ios", "android", "designer", "ui", "ux", "interface", "app", "dashboard", "graphics", "artist", "illustrator"]},
     5: {"name": "Job Profile Context (Duties & Responsibilities)", "anchors": ["devops", "cloud", "aws", "docker", "kubernetes", "linux", "systems", "network", "security", "database", "sql", "postgresql", "mysql", "data", "ml", "ai", "machine", "learning", "qa", "test", "testing", "analytics", "science", "nlp", "pipelines", "automation", "infrastructure", "deployment", "ci", "cd"]},
     
-    # Block C: Projects & Portfolio (1 dimension)
-    6: {"name": "Projects & Portfolio", "anchors": ["project", "portfolio", "github", "build", "implemented", "created", "designed", "achieved", "developed", "led", "contributed", "repo", "repository", "side-project", "gitlab", "bitbucket", "behance", "dribbble"]},
-    
-    # Block D: Location (1 dimension)
-    7: {"name": "Location", "anchors": ["remote", "hybrid", "onsite", "office", "home", "flexible", "travel", "kathmandu", "lalitpur", "pokhara", "nepal", "city", "country"]},
+    # Dimensions 6 & 7 are reserved (zero-filled) — scored separately by PHP bonus points:
+    #   6 → Projects & Portfolio  (PHP: +10 pts if CV/GitHub/portfolio present)
+    #   7 → Location              (PHP: +10 pts if location matches)
     
     # Block E: Skills (1 dimension)
     8: {"name": "Skills (Tech Stack)", "anchors": ["python", "php", "javascript", "react", "laravel", "sql", "css", "html", "docker", "django", "postgresql", "node", "java", "c#", "c++", "ruby", "rails", "git", "bash", "linux", "aws", "gcp", "azure", "tailwind", "rest", "api", "apis", "vue", "angular", "typescript", "nextjs", "next.js", "mongodb", "mysql", "nosql", "sass", "bootstrap", "jquery", "graphql"]},
@@ -74,7 +76,7 @@ class TextPreprocessor:
             return 0
         text = text.lower()
         # Find patterns like "3 years", "5+ years", "1 year"
-        matches = re.findall(r'(\d+)\s*(?:year|yr)', text)
+        matches = re.findall(r'(\d+)\+?\s*(?:year|yr)', text)
         if matches:
             return max(int(m) for m in matches)
         # Check single digits in context of experience
@@ -86,6 +88,191 @@ class TextPreprocessor:
                 if 0 < val <= 20 and ("exp" in text or "experience" in text):
                     return val
         return 0
+
+def match_term(term, text):
+    escaped = re.escape(term)
+    pattern = r'(?:^|[\s,.;:()/\-\[\]{}*])' + escaped + r'(?:$|[\s,.;:()/\-\[\]{}*])'
+    return bool(re.search(pattern, text, re.IGNORECASE))
+
+class SkillExperienceMatcher:
+    @staticmethod
+    def parse_skill_experiences(text):
+        if not text:
+            return {}
+        
+        # Split by html tags first to separate blocks
+        text_clean = re.sub(r'<[^>]*>', '\n', text)
+        
+        # Split by newlines, semicolons, and commas to get individual segments
+        segments = []
+        for line in text_clean.split('\n'):
+            for part in re.split(r'[;,]', line):
+                part = part.strip()
+                if part:
+                    segments.append(part)
+                    
+        # List of all known skills (case-insensitive search)
+        known_skills = [
+            # Tech Stack
+            "python", "php", "javascript", "react", "laravel", "sql", "css", "html", "docker", "django", 
+            "postgresql", "node", "java", "c#", "c++", "ruby", "rails", "git", "bash", "linux", "aws", 
+            "gcp", "azure", "tailwind", "rest", "api", "apis", "vue", "angular", "typescript", "nextjs", 
+            "next.js", "mongodb", "mysql", "nosql", "sass", "bootstrap", "jquery", "graphql",
+            # Data Science / Analytics / ML
+            "machine learning", "data science", "data analysis", "pandas", "numpy", "tensorflow", "pytorch", 
+            "nlp", "deep learning", "scikit-learn", "keras", "tableau", "power bi", "excel", "sheets", "matplotlib", "seaborn",
+            # DevOps & Tools
+            "devops", "kubernetes", "ci/cd", "jenkins", "ansible", "terraform", "vagrant", "nginx", "apache",
+            # Design & Marketing & Others
+            "digital marketing", "marketing", "seo", "sem", "social media", "content writing", "photoshop", 
+            "illustrator", "figma", "ui/ux", "ui", "ux", "graphic design", "wordpress", "github", "gitlab",
+            "communication skills", "problem solving", "statistics", "attention to detail"
+        ]
+        
+        known_skills = sorted(list(set(known_skills)), key=len, reverse=True)
+        
+        skill_exps = {}
+        for seg in segments:
+            seg_lower = seg.lower()
+            
+            # Find year match in this segment
+            year_match = re.search(r'(\d+)\+?\s*(?:years?|yrs?|y\b)', seg_lower)
+            years = 0
+            if year_match:
+                years = int(year_match.group(1))
+                # Remove year string from segment
+                seg_clean = seg_lower[:year_match.start()] + " " + seg_lower[year_match.end():]
+            else:
+                seg_clean = seg_lower
+                
+            seg_clean = re.sub(r'professional skills:?', '', seg_clean)
+            seg_clean = re.sub(r'[•●▪\-*:]', ' ', seg_clean)
+            seg_clean = seg_clean.strip()
+            
+            found_any = False
+            for ks in known_skills:
+                if match_term(ks, seg_clean):
+                    std_name = ks
+                    if ks in ["apis"]:
+                        std_name = "api"
+                    elif ks in ["github", "gitlab"]:
+                        std_name = "git"
+                    
+                    skill_exps[std_name] = max(skill_exps.get(std_name, 0), years)
+                    found_any = True
+            
+            if not found_any and years > 0:
+                parts = re.split(r'\band\b|\bor\b|&', seg_clean)
+                for p in parts:
+                    p_clean = p.strip()
+                    if p_clean and len(p_clean) > 1 and p_clean not in STOPWORDS:
+                        skill_exps[p_clean] = max(skill_exps.get(p_clean, 0), years)
+                        
+        return skill_exps
+
+    @staticmethod
+    def parse_skill_requirements(text):
+        if not text:
+            return {}
+        
+        text_clean = re.sub(r'<[^>]*>', '\n', text)
+        
+        # Split by newlines, semicolons, and commas
+        segments = []
+        for line in text_clean.split('\n'):
+            for part in re.split(r'[;,]', line):
+                part = part.strip()
+                if part:
+                    segments.append(part)
+                    
+        known_skills = [
+            "python", "php", "javascript", "react", "laravel", "sql", "css", "html", "docker", "django", 
+            "postgresql", "node", "java", "c#", "c++", "ruby", "rails", "git", "bash", "linux", "aws", 
+            "gcp", "azure", "tailwind", "rest", "api", "apis", "vue", "angular", "typescript", "nextjs", 
+            "next.js", "mongodb", "mysql", "nosql", "sass", "bootstrap", "jquery", "graphql",
+            "machine learning", "data science", "data analysis", "pandas", "numpy", "tensorflow", "pytorch", 
+            "nlp", "deep learning", "scikit-learn", "keras", "tableau", "power bi", "excel", "sheets", "matplotlib", "seaborn",
+            "devops", "kubernetes", "ci/cd", "jenkins", "ansible", "terraform", "vagrant", "nginx", "apache",
+            "digital marketing", "marketing", "seo", "sem", "social media", "content writing", "photoshop", 
+            "illustrator", "figma", "ui/ux", "ui", "ux", "graphic design", "wordpress", "github", "gitlab",
+            "communication skills", "problem solving", "statistics", "attention to detail"
+        ]
+        
+        known_skills = sorted(list(set(known_skills)), key=len, reverse=True)
+        
+        # Global fallback years of experience for the job
+        global_years = TextPreprocessor.extract_years(text)
+        
+        parsed = {}
+        for seg in segments:
+            seg_lower = seg.lower()
+            
+            # Find year match in this segment
+            year_match = re.search(r'(\d+)\+?\s*(?:years?|yrs?|y\b)', seg_lower)
+            years = 0
+            if year_match:
+                years = int(year_match.group(1))
+                seg_clean = seg_lower[:year_match.start()] + " " + seg_lower[year_match.end():]
+            else:
+                seg_clean = seg_lower
+                
+            seg_clean = re.sub(r'[•●▪\-*:]', ' ', seg_clean).strip()
+            
+            for ks in known_skills:
+                if match_term(ks, seg_clean):
+                    std_name = ks
+                    if ks in ["apis"]:
+                        std_name = "api"
+                    elif ks in ["github", "gitlab"]:
+                        std_name = "git"
+                        
+                    parsed[std_name] = max(parsed.get(std_name, 0), years)
+                    
+        return parsed
+
+    @staticmethod
+    def calculate_match(user_text, job_text):
+        seeker_skills = SkillExperienceMatcher.parse_skill_experiences(user_text)
+        job_skills = SkillExperienceMatcher.parse_skill_requirements(job_text)
+        
+        if not job_skills:
+            return 1.0
+            
+        matched_score = 0.0
+        total_weight = 0.0
+        
+        # Get overall experience years as fallback
+        overall_years = TextPreprocessor.extract_years(user_text)
+        
+        for skill, req_years in job_skills.items():
+            weight = 1.0
+            total_weight += weight
+            
+            matched_seeker_skill = None
+            for ss in seeker_skills.keys():
+                if ss == skill or match_term(ss, skill) or match_term(skill, ss):
+                    matched_seeker_skill = ss
+                    break
+            
+            if matched_seeker_skill:
+                seeker_years = seeker_skills[matched_seeker_skill]
+                if seeker_years == 0 and overall_years > 0:
+                    seeker_years = overall_years
+                    
+                if req_years == 0:
+                    matched_score += weight
+                else:
+                    if seeker_years >= req_years:
+                        matched_score += weight
+                    elif seeker_years > 0:
+                        matched_score += weight * (seeker_years / req_years)
+                    else:
+                        matched_score += weight * 0.5
+            else:
+                matched_score += 0.0
+                
+        return matched_score / total_weight if total_weight > 0 else 1.0
+
 
 class TFIDFVectorizer:
     def __init__(self):
@@ -516,9 +703,25 @@ def main():
             _, job_index = db.load_index()
             job_vectors = {jid: jdata["vector"] for jid, jdata in db.jobs.items()}
             
-            results = job_index.search(q_vec, job_vectors, n_probe=2)
-            # Map similarity score to percentage (0 - 100)
-            formatted = [{"job_id": int(jid), "score": max(0, min(100, int(sim * 100)))} for jid, sim in results]
+            results = job_index.search(q_vec, job_vectors, n_probe=10)
+            
+            # Hybrid scoring: 40% FAISS base + 60% individual skill-experience match
+            user_text = db.users.get(str(user_id), {}).get("text", "")
+            
+            formatted = []
+            for jid, sim in results:
+                job_data = db.jobs.get(str(jid), {})
+                job_text = job_data.get("text", "")
+                
+                base_score = max(0, min(100, int(sim * 100)))
+                skills_match_pct = int(SkillExperienceMatcher.calculate_match(user_text, job_text) * 100)
+                boosted_base = base_score + (100 - base_score) * (skills_match_pct / 100.0)
+                final_score = int(boosted_base * 0.40 + skills_match_pct * 0.60)
+                
+                formatted.append({
+                    "job_id": int(jid),
+                    "score": max(0, min(100, final_score))
+                })
             print(json.dumps(formatted))
 
         elif cmd == "--search-applicants":
@@ -532,8 +735,24 @@ def main():
             seeker_index, _ = db.load_index()
             seeker_vectors = {uid: udata["vector"] for uid, udata in db.users.items()}
             
-            results = seeker_index.search(q_vec, seeker_vectors, n_probe=2)
-            formatted = [{"user_id": int(uid), "score": max(0, min(100, int(sim * 100)))} for uid, sim in results]
+            results = seeker_index.search(q_vec, seeker_vectors, n_probe=10)
+            
+            job_text = db.jobs.get(str(job_id), {}).get("text", "")
+            
+            formatted = []
+            for uid, sim in results:
+                user_data = db.users.get(str(uid), {})
+                user_text = user_data.get("text", "")
+                
+                base_score = max(0, min(100, int(sim * 100)))
+                skills_match_pct = int(SkillExperienceMatcher.calculate_match(user_text, job_text) * 100)
+                boosted_base = base_score + (100 - base_score) * (skills_match_pct / 100.0)
+                final_score = int(boosted_base * 0.40 + skills_match_pct * 0.60)
+                
+                formatted.append({
+                    "user_id": int(uid),
+                    "score": max(0, min(100, final_score))
+                })
             print(json.dumps(formatted))
 
         elif cmd == "--search-cv":
@@ -552,8 +771,22 @@ def main():
             _, job_index = db.load_index()
             job_vectors = {jid: jdata["vector"] for jid, jdata in db.jobs.items()}
             
-            results = job_index.search(q_vec, job_vectors, n_probe=2)
-            formatted = [{"job_id": int(jid), "score": max(0, min(100, int(sim * 100)))} for jid, sim in results]
+            results = job_index.search(q_vec, job_vectors, n_probe=10)
+            
+            formatted = []
+            for jid, sim in results:
+                job_data = db.jobs.get(str(jid), {})
+                job_text = job_data.get("text", "")
+                
+                base_score = max(0, min(100, int(sim * 100)))
+                skills_match_pct = int(SkillExperienceMatcher.calculate_match(text, job_text) * 100)
+                boosted_base = base_score + (100 - base_score) * (skills_match_pct / 100.0)
+                final_score = int(boosted_base * 0.40 + skills_match_pct * 0.60)
+                
+                formatted.append({
+                    "job_id": int(jid),
+                    "score": max(0, min(100, final_score))
+                })
             print(json.dumps(formatted))
 
         else:

@@ -89,7 +89,7 @@ class ProviderController extends Controller
 
         $data = $request->validate([
             'title'               => 'required|string|max:150',
-            'location'            => 'required|string|max:100',
+            'location'            => 'nullable|string|max:100',
             'type'                => 'required|in:full-time,part-time,remote,contract,internship',
             'description'         => 'required|string',
             'requirements'        => 'required|string',
@@ -128,7 +128,7 @@ class ProviderController extends Controller
 
         $data = $request->validate([
             'title'               => 'required|string|max:150',
-            'location'            => 'required|string|max:100',
+            'location'            => 'nullable|string|max:100',
             'type'                => 'required|in:full-time,part-time,remote,contract,internship',
             'description'         => 'required|string',
             'requirements'        => 'required|string',
@@ -174,20 +174,29 @@ class ProviderController extends Controller
         $user = $this->authUser();
         abort_if($job->user_id !== $user->id, 403);
 
-        // Fetch dynamic seeker match scores for this job from Python
+        // Fetch raw FAISS scores for all applicants of this job
         $scriptPath = escapeshellarg(base_path('python/match.py'));
-        $cmd = "python {$scriptPath} --search-applicants --id " . escapeshellarg($job->id);
-        $output = shell_exec($cmd);
-        $scores = json_decode($output, true) ?? [];
+        $cmd        = "python {$scriptPath} --search-applicants --id " . escapeshellarg($job->id);
+        $output     = shell_exec($cmd);
+        $scores     = json_decode($output, true) ?? [];
 
-        $scoreMap = [];
+        $faissMap = [];
         foreach ($scores as $s) {
-            $scoreMap[$s['user_id']] = $s['score'];
+            $faissMap[$s['user_id']] = $s['score'];
         }
 
         $applications = $job->applications()->with('seeker')->get();
-        $applications = $applications->map(function ($app) use ($scoreMap) {
-            $app->match_score = $scoreMap[$app->user_id] ?? 0;
+        $applications = $applications->map(function ($app) use ($faissMap, $job) {
+            if (!$app->seeker) { $app->match_score = 0; return $app; }
+            $faissScore       = $faissMap[$app->user_id] ?? 0;
+            $comp             = $app->seeker->compositeScore($job, $faissScore);
+            $liveScore        = $comp['final_score'];
+            $app->match_score = $liveScore;
+
+            // Sync DB so seeker sees the same score everywhere
+            if ($app->getOriginal('match_score') != $liveScore) {
+                Application::where('id', $app->id)->update(['match_score' => $liveScore]);
+            }
             return $app;
         })->sortByDesc('match_score')->values();
 
@@ -196,13 +205,56 @@ class ProviderController extends Controller
 
     public function allApplicants()
     {
-        $user = $this->authUser();
+        $user   = $this->authUser();
         $jobIds = $user->postedJobs()->pluck('id');
+
         $applications = Application::whereIn('job_id', $jobIds)
             ->with(['seeker', 'job'])
             ->latest()
             ->get();
+
+        // ── Live-recompute match score for each application ───────────────────────
+        $scriptPath = escapeshellarg(base_path('python/match.py'));
+
+        // Build per-job score maps (one Python call per unique job)
+        $jobScoreMaps = [];
+        foreach ($jobIds as $jid) {
+            $cmd    = "python {$scriptPath} --search-applicants --id " . escapeshellarg($jid);
+            $output = shell_exec($cmd);
+            $scores = json_decode($output, true) ?? [];
+            $jobScoreMaps[$jid] = collect($scores)->keyBy('user_id');
+        }
+
+        foreach ($applications as $app) {
+            if (!$app->seeker || !$app->job) continue;
+            $scoreMap  = $jobScoreMaps[$app->job_id] ?? collect();
+            $faissScore = $scoreMap->get($app->user_id)['score'] ?? 0;
+            $comp       = $app->seeker->compositeScore($app->job, $faissScore);
+            $liveScore  = $comp['final_score'];
+            $app->match_score = $liveScore;
+
+            if ($app->getOriginal('match_score') != $liveScore) {
+                Application::where('id', $app->id)->update(['match_score' => $liveScore]);
+            }
+        }
+        // ─────────────────────────────────────────────────────────────────────────
+
         return view('provider.all-applicants', compact('user', 'applications'));
+    }
+
+    public function updateApplicationStatus(Request $request, Application $application)
+    {
+        $user = $this->authUser();
+        abort_if($application->job->user_id !== $user->id, 403);
+
+        $request->validate([
+            'status' => 'required|in:applied,reviewed,shortlisted,rejected'
+        ]);
+
+        $application->status = $request->status;
+        $application->save();
+
+        return back()->with('success', "Application status updated to " . ucfirst($request->status) . ".");
     }
 }
 

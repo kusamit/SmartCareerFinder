@@ -5,7 +5,7 @@
 <a href="{{ route('seeker.dashboard') }}" class="nav-link">Dashboard</a>
 <a href="{{ route('seeker.jobs') }}" class="nav-link">Find Jobs</a>
 <a href="{{ route('seeker.applications') }}" class="nav-link">Applications</a>
-<a href="{{ route('seeker.profile') }}" class="nav-link">Profile</a>
+<a href="{{ route('seeker.profile.view') }}" class="nav-link">Profile</a>
 @endsection
 
 @push('styles')
@@ -56,7 +56,7 @@
     }
 
     /* ===== STATUS COLUMN ===== */
-    .status-col { text-align: center; flex-shrink: 0; padding-left: 16px; border-left: 1px solid #f1f5f9; width: 130px; }
+    .status-col { text-align: center; flex-shrink: 0; padding-left: 16px; border-left: 1px solid #f1f5f9; width: 150px; }
 
     .badge-status {
         display: inline-flex; align-items: center; gap: 5px;
@@ -64,20 +64,33 @@
         text-transform: capitalize;
     }
     .status-applied { background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; }
-    .status-applied::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: #0284c7; }
 
     .status-reviewed { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
-    .status-reviewed::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: #d97706; }
 
     .status-shortlisted { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
-    .status-shortlisted::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: #16a34a; }
 
     .status-rejected { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
-    .status-rejected::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: #dc2626; }
+
+    /* ===== TRACK STATUS BUTTON ===== */
+    .track-status-btn {
+        display: flex; flex-direction: column; align-items: center; gap: 5px;
+        background: none; border: none; cursor: pointer; padding: 0;
+        width: 100%;
+    }
+    .track-hint {
+        display: inline-flex; align-items: center; gap: 4px;
+        font-size: 10px; font-weight: 700; color: #6366f1;
+        text-transform: uppercase; letter-spacing: 0.08em;
+        background: #eef2ff; border: 1px solid #c7d2fe;
+        padding: 2px 8px; border-radius: 999px;
+        transition: background 0.15s;
+    }
+    .track-status-btn:hover .badge-status { opacity: 0.85; transform: scale(1.04); }
+    .track-status-btn:hover .track-hint { background: #e0e7ff; }
 
     .job-closed-tag {
         display: block; font-size: 10px; font-weight: 700; color: #dc2626;
-        text-transform: uppercase; letter-spacing: 0.05em; margin-top: 6px;
+        text-transform: uppercase; letter-spacing: 0.05em; margin-top: 4px;
     }
 
     /* ===== EMPTY STATE ===== */
@@ -97,6 +110,35 @@
         transition: all 0.25s; box-shadow: 0 6px 20px rgba(79,70,229,0.3);
     }
     .btn-find:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(79,70,229,0.4); color: #fff; }
+
+    /* ===== STATUS FILTER TABS ===== */
+    .filter-bar {
+        display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+        background: #fff; border: 1.5px solid #f1f5f9; border-radius: 16px;
+        padding: 10px 16px; margin-bottom: 20px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+    .filter-tab {
+        display: inline-flex; align-items: center; gap: 6px;
+        padding: 5px 14px; border-radius: 999px; font-size: 12px; font-weight: 700;
+        text-decoration: none; border: 1.5px solid transparent;
+        transition: all 0.18s; color: #64748b; background: #f8fafc;
+    }
+    .filter-tab:hover { border-color: #c7d2fe; color: #4f46e5; background: #eef2ff; }
+    .filter-tab.active { background: #4f46e5; color: #fff; border-color: #4f46e5; box-shadow: 0 4px 12px rgba(79,70,229,0.25); }
+    .filter-tab .count-badge {
+        background: rgba(255,255,255,0.25); color: inherit;
+        padding: 0 6px; border-radius: 999px; font-size: 10px;
+    }
+    .filter-tab:not(.active) .count-badge { background: #e2e8f0; color: #64748b; }
+    .filter-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+    .filter-active-banner {
+        display: flex; align-items: center; justify-content: space-between;
+        background: #eef2ff; border: 1px solid #c7d2fe; border-radius: 12px;
+        padding: 8px 14px; margin-bottom: 16px; font-size: 12px; font-weight: 600; color: #4338ca;
+    }
+    .filter-active-banner a { color: #4338ca; text-decoration: none; font-weight: 700; opacity: 0.75; }
+    .filter-active-banner a:hover { opacity: 1; }
 </style>
 @endpush
 
@@ -109,6 +151,51 @@
         <div class="page-sub">Track all your job applications in one place</div>
     </div>
 
+    {{-- ===== SEARCH BAR ===== --}}
+    <div style="max-width: 360px; background:#fff; border: 1.5px solid #f1f5f9; border-radius: 16px; padding: 12px 18px; margin-bottom: 20px; box-shadow:0 2px 10px rgba(0,0,0,0.03);">
+        <div>
+            <label style="font-size: 9.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#94a3b8; display:block; margin-bottom:4px;">Search by Job Title</label>
+            <input type="text" id="searchJobTitle" placeholder="Search by job title..." style="width:100%; border:1.5px solid #e2e8f0; border-radius:8px; padding:6px 10px; font-size:12.5px; color:#1e293b; outline:none; transition:all 0.2s;" oninput="filterApplications()">
+        </div>
+    </div>
+
+    {{-- ===== STATUS FILTER TABS ===== --}}
+    @php
+        $allCount        = \App\Models\Application::where('user_id', $user->id)->count();
+        $filterCounts    = \App\Models\Application::where('user_id', $user->id)
+            ->selectRaw('status, COUNT(*) as cnt')->groupBy('status')
+            ->pluck('cnt', 'status')->toArray();
+        $filterTabs = [
+            null          => ['label' => 'All',         'color' => '#6366f1', 'count' => $allCount],
+            'applied'     => ['label' => 'Applied',     'color' => '#0284c7', 'count' => $filterCounts['applied']     ?? 0],
+            'reviewed'    => ['label' => 'Reviewed',    'color' => '#d97706', 'count' => $filterCounts['reviewed']    ?? 0],
+            'shortlisted' => ['label' => 'Shortlisted', 'color' => '#16a34a', 'count' => $filterCounts['shortlisted'] ?? 0],
+            'rejected'    => ['label' => 'Rejected',    'color' => '#dc2626', 'count' => $filterCounts['rejected']    ?? 0],
+        ];
+    @endphp
+    <div class="filter-bar">
+        <span style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#94a3b8; margin-right:4px;">Filter:</span>
+        @foreach($filterTabs as $tabKey => $tab)
+            @php
+                $isActive = ($tabKey === null && $activeStatus === null) || ($tabKey !== null && $activeStatus === $tabKey);
+                $url = $tabKey ? route('seeker.applications') . '?status=' . $tabKey : route('seeker.applications');
+            @endphp
+            <a href="{{ $url }}" class="filter-tab {{ $isActive ? 'active' : '' }}">
+                <span class="filter-dot" style="background:{{ $tab['color'] }};"></span>
+                {{ $tab['label'] }}
+                <span class="count-badge">{{ $tab['count'] }}</span>
+            </a>
+        @endforeach
+    </div>
+
+    {{-- Active filter banner --}}
+    @if($activeStatus)
+    <div class="filter-active-banner">
+        <span>Showing <strong>{{ ucfirst($activeStatus) }}</strong> applications only</span>
+        <a href="{{ route('seeker.applications') }}">✕ Clear filter</a>
+    </div>
+    @endif
+
     @forelse($applications as $app)
     @php
         $statusMap = [
@@ -118,9 +205,12 @@
             'rejected'    => 'status-rejected'
         ];
         $statusClass = $statusMap[$app->status] ?? 'bg-slate-100 text-slate-700';
-        $score       = $app->match_score;
+        $live        = $liveScores[$app->id] ?? null;
+        $score       = $live['score']     ?? $app->match_score;   // live-computed; fall back to stored
+        $liveComp    = $live['composite'] ?? null;
         $scoreClass  = $score >= 70 ? 'score-high' : ($score >= 40 ? 'score-mid' : 'score-low');
         $details     = $user->matchDetails($app->job, $score);
+        $finalComp   = $liveComp ?? $details['composite'];
         $matchDataArr = [
             'name'             => $user->name,
             'job_title'        => $app->job->title,
@@ -129,16 +219,23 @@
             'unmatched_skills' => array_values($details['unmatched_skills']),
             'location_match'   => $details['location_match'],
             'role_match'       => $details['role_match'],
+            'role_matched_role'=> $details['role_matched_role'] ?? null,
+            'seeker_roles'     => $details['seeker_roles'] ?? [],
             'seeker_location'  => $details['seeker_location'],
             'job_location'     => $details['job_location'],
             'seeker_role'      => $details['seeker_role'],
             'exp_match'        => $details['exp_match'],
             'exp_message'      => $details['exp_message'],
             'portfolio_match'  => $details['portfolio_match'],
-            'composite'        => $details['composite'],
+            'composite'        => $finalComp,
+        ];
+        $statusData = [
+            'status'    => $app->status,
+            'job_title' => $app->job->title,
+            'company'   => $app->job->company,
         ];
     @endphp
-    <div class="app-card">
+    <div class="app-card" style="flex-wrap:wrap;">
         {{-- Info --}}
         <div class="app-info">
             <a href="{{ route('jobs.show', $app->job->id) }}" class="job-link">{{ $app->job->title }}</a>
@@ -161,10 +258,23 @@
 
         {{-- Status --}}
         <div class="status-col">
-            <span class="badge-status {{ $statusClass }}">{{ $app->status }}</span>
+            <button class="track-status-btn" data-app-status='@json($statusData)' title="Click to track your application status">
+                <span class="badge-status {{ $statusClass }}">{{ $app->status }}</span>
+                <span class="track-hint">Track &rarr;</span>
+            </button>
             @if(!$app->job->isOpen())
                 <span class="job-closed-tag">Closed</span>
             @endif
+        </div>
+
+        {{-- Full-width: View Job Details Link --}}
+        <div style="width:100%; border-top:1px solid #f1f5f9; padding-top:12px; margin-top:4px;">
+            <a href="{{ route('jobs.show', $app->job->id) }}"
+               style="display:inline-flex; align-items:center; gap:5px; padding:5px 14px; background:#dcfce7; color:#15803d; font-weight:700; font-size:12px; border-radius:8px; border:1px solid #bbf7d0; text-decoration:none; transition:all 0.2s;"
+               onmouseover="this.style.background='#16a34a'; this.style.color='#fff'; this.style.borderColor='#16a34a';"
+               onmouseout="this.style.background='#dcfce7'; this.style.color='#15803d'; this.style.borderColor='#bbf7d0';">
+               View Full Details &rarr;
+            </a>
         </div>
     </div>
     @empty
@@ -177,3 +287,23 @@
 
 </div>
 @endsection
+
+@push('scripts')
+<script>
+    function filterApplications() {
+        const query = document.getElementById('searchJobTitle').value.toLowerCase().trim();
+        const cards = document.querySelectorAll('.app-card');
+
+        cards.forEach(card => {
+            const jobLink = card.querySelector('.job-link');
+            const title = jobLink ? jobLink.textContent.toLowerCase().trim() : '';
+
+            if (!query || title.includes(query)) {
+                card.style.display = '';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    }
+</script>
+@endpush

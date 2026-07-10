@@ -111,6 +111,26 @@
         font-size: 9px; color: #c7d2fe; font-weight: 600;
         text-transform: uppercase; letter-spacing: 0.08em; margin-top: 4px;
     }
+
+    /* ===== APPLICANT STATUS CONTROL ===== */
+    .status-action-col { flex-shrink: 0; padding: 0 0 0 12px; border-left: 1px solid #f1f5f9; min-width: 160px; }
+    .status-action-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #94a3b8; margin-bottom: 6px; }
+    .status-select {
+        width: 100%; padding: 6px 10px; border: 1.5px solid #e2e8f0; border-radius: 10px;
+        font-size: 12px; font-weight: 700; color: #0f172a; background: #f8fafc;
+        cursor: pointer; outline: none; transition: border-color 0.2s;
+    }
+    .status-select:hover { border-color: #a5b4fc; }
+    .status-select:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
+    .applicant-current-status {
+        display: inline-flex; align-items: center; gap: 4px;
+        padding: 2px 8px; border-radius: 999px; font-size: 10px; font-weight: 700;
+        text-transform: capitalize; margin-bottom: 5px;
+    }
+    .cs-applied     { background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; }
+    .cs-reviewed    { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
+    .cs-shortlisted { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
+    .cs-rejected    { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
 </style>
 @endpush
 
@@ -180,8 +200,8 @@
             @endif
             @if($app->seeker->skills)
             <div class="applicant-skills">
-                @foreach(array_slice(explode(',', $app->seeker->skills), 0, 5) as $skill)
-                <span class="applicant-skill">{{ trim($skill) }}</span>
+                @foreach(array_slice($app->seeker->skillsArray(), 0, 5) as $skill)
+                <span class="applicant-skill">{{ $skill }}</span>
                 @endforeach
             </div>
             @endif
@@ -190,7 +210,7 @@
         {{-- Experience --}}
         <div class="applicant-stat">
             <div class="stat-label-sm">Experience</div>
-            <div class="stat-value-sm">{{ $app->seeker->experience_years ?? '—' }} yr(s)</div>
+            <div class="stat-value-sm">{{ $app->seeker->experienceSummary() }}</div>
         </div>
 
         {{-- Match Score (Clickable) --}}
@@ -211,6 +231,22 @@
             <div class="stat-label-sm">Applied</div>
             <div class="applied-date">{{ $app->created_at->format('M d') }}</div>
             <div class="applied-year">{{ $app->created_at->format('Y') }}</div>
+        </div>
+
+        {{-- Status Update --}}
+        @php $csClass = 'cs-' . $app->status; @endphp
+        <div class="status-action-col">
+            <div class="status-action-label">Application Status</div>
+            <div class="applicant-current-status {{ $csClass }}">{{ $app->status }}</div>
+            <form method="POST" action="{{ route('provider.applications.status', $app->id) }}">
+                @csrf @method('PATCH')
+                <select name="status" class="status-select" onchange="this.form.submit()">
+                    <option value="applied"     {{ $app->status === 'applied'     ? 'selected' : '' }}>Applied</option>
+                    <option value="reviewed"    {{ $app->status === 'reviewed'    ? 'selected' : '' }}>Reviewed</option>
+                    <option value="shortlisted" {{ $app->status === 'shortlisted' ? 'selected' : '' }}>Shortlisted</option>
+                    <option value="rejected"    {{ $app->status === 'rejected'    ? 'selected' : '' }}>Rejected</option>
+                </select>
+            </form>
         </div>
 
     </div>

@@ -9,8 +9,53 @@
 @endsection
 
 @push('styles')
+<link href="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.snow.css" rel="stylesheet">
 <style>
     body { background: #f1f4f9 !important; }
+
+    /* ===== QUILL EDITOR ===== */
+    .editor-wrapper {
+        border: 1.5px solid #e2e8f0;
+        border-radius: 14px;
+        overflow: hidden;
+        transition: border-color 0.2s;
+    }
+    .editor-wrapper:focus-within {
+        border-color: #6366f1;
+    }
+    .ql-toolbar.ql-snow {
+        border: none !important;
+        border-bottom: 1px solid #f1f5f9 !important;
+        background: #f8fafc;
+        padding: 8px 12px;
+        display: flex;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        gap: 2px;
+    }
+    .ql-toolbar.ql-snow .ql-formats { margin-right: 8px; }
+    .ql-container.ql-snow {
+        border: none !important;
+        background: #fff;
+        color: #0f172a;
+        font-family: 'Sora', sans-serif;
+        font-size: 14px;
+        min-height: 120px;
+    }
+    .ql-editor { min-height: 120px; padding: 14px 16px; line-height: 1.7; }
+    .ql-editor.ql-blank::before {
+        color: #94a3b8 !important;
+        font-style: normal !important;
+        left: 16px;
+    }
+    .ql-snow .ql-picker { color: #475569; }
+    .ql-snow .ql-stroke { stroke: #475569; }
+    .ql-snow .ql-fill { fill: #475569; }
+    .ql-snow button:hover .ql-stroke,
+    .ql-snow .ql-picker-label:hover .ql-stroke { stroke: #6366f1 !important; }
+    .ql-snow button:hover .ql-fill { fill: #6366f1 !important; }
+    .ql-snow button.ql-active .ql-stroke { stroke: #6366f1 !important; }
+    .ql-snow button.ql-active .ql-fill { fill: #6366f1 !important; }
 
     .profile-page-wrapper {
         max-width: 820px;
@@ -225,8 +270,21 @@
                 <h1>{{ $user->name }}</h1>
                 <p>{{ $user->email }}</p>
                 @if($user->preferred_role)
-                <p style="color:rgba(255,255,255,0.5); font-size:12px; margin-top:2px;">{{ $user->preferred_role }}</p>
+                <p style="color:rgba(255,255,255,0.5); font-size:12px; margin-top:2px;">{{ strip_tags($user->preferred_role) }}</p>
                 @endif
+            </div>
+            {{-- View Profile Toggle --}}
+            <div style="margin-left:auto; flex-shrink:0;">
+                <a href="{{ route('seeker.profile.view') }}"
+                   style="display:inline-flex; align-items:center; gap:7px; padding:9px 20px;
+                          background:rgba(255,255,255,0.1); border:1.5px solid rgba(255,255,255,0.2);
+                          color:#fff !important; font-size:12.5px; font-weight:700;
+                          border-radius:12px; text-decoration:none; transition:all 0.22s;
+                          backdrop-filter:blur(4px);"
+                   onmouseover="this.style.background='rgba(255,255,255,0.18)'"
+                   onmouseout="this.style.background='rgba(255,255,255,0.1)'">
+                    &#128065; View Profile
+                </a>
             </div>
         </div>
     </div>
@@ -250,7 +308,7 @@
         </div>
         @endif
 
-        <form method="POST" action="{{ route('seeker.profile.update') }}">
+        <form id="profileForm" method="POST" action="{{ route('seeker.profile.update') }}">
             @csrf
 
             {{-- Basic Info --}}
@@ -268,17 +326,80 @@
                 </div>
                 <div class="field-grid-2">
                     <div class="field-group">
-                        <label class="field-label">Education</label>
-                        <input type="text" name="education" value="{{ old('education', $user->education) }}" class="field-input" placeholder="e.g. BSc Computer Science">
+                        <label class="field-label">Phone Number</label>
+                        <input type="text" name="phone" value="{{ old('phone', $user->phone) }}" class="field-input" placeholder="e.g. +977 9800000000">
                     </div>
                     <div class="field-group">
-                        <label class="field-label">Years of Experience</label>
-                        <input type="number" name="experience_years" value="{{ old('experience_years', $user->experience_years) }}" class="field-input" placeholder="0" min="0" max="50">
+                        <label class="field-label">Email Address</label>
+                        <input type="email" name="email" value="{{ old('email', $user->email) }}" class="field-input" required placeholder="e.g. user@example.com">
                     </div>
                 </div>
                 <div class="field-group">
-                    <label class="field-label">Preferred Role</label>
-                    <input type="text" name="preferred_role" value="{{ old('preferred_role', $user->preferred_role) }}" class="field-input" placeholder="e.g. Backend Developer, Data Analyst">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px;">
+                        <label class="field-label" style="margin-bottom:0;">Education History</label>
+                        <a href="{{ route('seeker.education') }}" class="btn" style="padding: 6px 14px; font-size:12px; font-weight:600; text-decoration:none; background:#6366f1; color:#fff; border-radius:8px;">Manage Education</a>
+                    </div>
+                    
+                    @if($user->educations->isNotEmpty())
+                        <div style="display:grid; gap:8px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:16px;">
+                            @foreach($user->educations as $edu)
+                                <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #f1f5f9; padding-bottom:8px; margin-bottom:8px; last-child: {border:none, padding:0, margin:0}">
+                                    <div>
+                                        <div style="font-weight:700; color:#0f172a; font-size:13.5px;">{{ $edu->school }}</div>
+                                        <div style="color:#64748b; font-size:12.5px;">{{ $edu->degree }}, {{ $edu->field_of_study }}</div>
+                                    </div>
+                                    <div style="font-size:12px; color:#94a3b8; font-weight:600;">
+                                        {{ $edu->start_year }} – {{ $edu->end_year }}
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    @else
+                        <div style="text-align:center; padding:24px; border: 1.5px dashed #cbd5e1; border-radius:12px; background:#fff;">
+                            <div style="font-size:13.5px; color:#64748b; margin-bottom:10px;">No education history added yet.</div>
+                            <a href="{{ route('seeker.education') }}" style="color:#6366f1; font-size:13px; font-weight:600; text-decoration:none;">+ Add Education</a>
+                        </div>
+                    @endif
+                </div>
+                <div class="field-group">
+                    <label class="field-label">
+                        Experience
+                        <span class="hint">List your skill experiences (e.g. Experience in PHP with 3 years, 4years in Website development)...</span>
+                    </label>
+                    <input type="hidden" name="experience_years" id="experience_years" value="{{ old('experience_years', $user->experience_years) }}">
+                    <div class="editor-wrapper">
+                        <div id="experience_years-editor">{!! old('experience_years', $user->experience_years) !!}</div>
+                    </div>
+                    <div id="experience_years-preview" class="skills-tags-preview" style="margin-top: 12px;">
+                        @php
+                            $rawExp = strip_tags($user->experience_years ?? '');
+                            $rawExp = html_entity_decode($rawExp, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                            $expList = array_filter(array_map('trim', explode("\n", str_replace("\r", "", $rawExp))));
+                            if (count($expList) <= 1) {
+                                $expList = array_filter(array_map('trim', explode(',', str_replace(['•', '●', '▪', '-', '*'], ',', $rawExp))));
+                            }
+                        @endphp
+                        @foreach($expList as $item)
+                            @if($item)
+                                <span class="skill-tag">{{ $item }}</span>
+                            @endif
+                        @endforeach
+                    </div>
+                </div>
+                <div class="field-group">
+                    <label class="field-label">
+                        Preferred Role
+                        <span class="hint">List your preferred job roles</span>
+                    </label>
+                    <input type="hidden" name="preferred_role" id="preferred_role" value="{{ old('preferred_role', $user->preferred_role) }}">
+                    <div class="editor-wrapper">
+                        <div id="preferred_role-editor">{!! old('preferred_role', $user->preferred_role) !!}</div>
+                    </div>
+                    <div id="preferred_role-preview" class="skills-tags-preview" style="margin-top: 12px;">
+                        @foreach($user->preferredRoleArray() as $role)
+                            <span class="skill-tag">{{ $role }}</span>
+                        @endforeach
+                    </div>
                 </div>
             </div>
 
@@ -288,17 +409,39 @@
                 <div class="field-group">
                     <label class="field-label">
                         Your Skills
-                        <span class="hint">(comma separated — used for AI job matching)</span>
+                        <span class="hint">List your skills, technologies, or tools</span>
                     </label>
-                    <input type="text" id="skillsInput" name="skills"
-                           value="{{ old('skills', $user->skills) }}"
-                           class="field-input"
-                           placeholder="e.g. Python, Machine Learning, Django, SQL"
-                           autocomplete="off">
-                    <div id="skills-preview" class="skills-tags-preview">
-                        @foreach(array_filter(array_map('trim', explode(',', old('skills', $user->skills ?? '')))) as $sk)
+                    <input type="hidden" name="skills" id="skills" value="{{ old('skills', $user->skills) }}">
+                    <div class="editor-wrapper">
+                        <div id="skills-editor">{!! old('skills', $user->skills) !!}</div>
+                    </div>
+                    <div id="skills-preview" class="skills-tags-preview" style="margin-top: 12px;">
+                        @foreach($user->skillsArray() as $sk)
                             <span class="skill-tag">{{ $sk }}</span>
                         @endforeach
+                    </div>
+                </div>
+
+                {{-- Project / Portfolio --}}
+                <div class="field-group" style="margin-top:24px;">
+                    <label class="field-label">
+                        Projects / Portfolio
+                        <span class="hint">Describe your projects or add links (GitHub, Behance, Dribbble, etc.) — awards +10 pts in match score</span>
+                    </label>
+                    <input type="hidden" name="portfolio" id="portfolio" value="{{ old('portfolio', $user->portfolio) }}">
+                    <div class="editor-wrapper">
+                        <div id="portfolio-editor">{!! old('portfolio', $user->portfolio) !!}</div>
+                    </div>
+                    {{-- Live portfolio indicator --}}
+                    <div style="margin-top:10px; display:flex; align-items:center; gap:8px; font-size:12.5px;">
+                        <span id="portfolio-status-dot" style="width:8px;height:8px;border-radius:50%;background:{{ trim(strip_tags($user->portfolio ?? '')) ? '#10b981' : '#e11d48' }};flex-shrink:0;"></span>
+                        <span id="portfolio-status-text" style="color:#64748b;">
+                            @if(trim(strip_tags($user->portfolio ?? '')))
+                                Portfolio content present — +10 pts in match score
+                            @else
+                                No portfolio content yet — add projects or links to unlock +10 pts
+                            @endif
+                        </span>
                     </div>
                 </div>
             </div>
@@ -326,17 +469,116 @@
 @endsection
 
 @push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.min.js" crossorigin="anonymous"></script>
 <script>
-    const skillsInput = document.getElementById('skillsInput');
-    const preview = document.getElementById('skills-preview');
+    document.addEventListener('DOMContentLoaded', function () {
+        // Helper: init a Quill editor with auto-generated toolbar in JS.
+        function initQuill(editorSelector, placeholder, isPortfolio = false) {
+            const editorEl = document.querySelector(editorSelector);
+            if (!editorEl) return null;
+            const savedHTML = editorEl.innerHTML.trim();
+            editorEl.innerHTML = '';  // clean slate before init
+            
+            const toolbarOpts = isPortfolio 
+                ? [
+                    ['bold', 'italic', 'underline'],
+                    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                    ['link', 'clean']
+                  ]
+                : [
+                    ['bold', 'italic', 'underline'],
+                    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                    ['clean']
+                  ];
 
-    if (skillsInput) {
-        skillsInput.addEventListener('input', function () {
-            const skills = this.value.split(',').map(s => s.trim()).filter(Boolean);
-            preview.innerHTML = skills.map(skill =>
-                `<span class="skill-tag">${skill}</span>`
-            ).join('');
+            const q = new Quill(editorEl, {
+                modules: {
+                    toolbar: toolbarOpts
+                },
+                placeholder: placeholder,
+                theme: 'snow'
+            });
+            
+            if (savedHTML) {
+                q.root.innerHTML = savedHTML;
+            }
+            return q;
+        }
+
+        const roleQuill = initQuill('#preferred_role-editor',
+            'List preferred roles (e.g. Backend Developer, Frontend Developer, UI/UX Designer)...');
+
+        const skillsQuill = initQuill('#skills-editor',
+            'List your skills, technologies, frameworks, or tools (e.g. Python, Django, REST API, Docker)...');
+
+        const expQuill = initQuill('#experience_years-editor',
+            'List your skill experiences (e.g. Experience in PHP with 3 years, 4years in Website development)...');
+
+        // Helper: parse Quill plain text into tag array
+        function parseTagsFromQuill(quillInstance) {
+            if (!quillInstance) return [];
+            const text = quillInstance.getText();
+            const cleanText = text.replace(/[\n\r]+/g, ',')
+                                  .replace(/[•●▪\-*]+/g, ',')
+                                  .trim();
+            return cleanText.split(',')
+                            .map(s => s.trim())
+                            .filter(s => s.length > 0);
+        }
+
+        function renderTags(previewId, tagsArray) {
+            const preview = document.getElementById(previewId);
+            if (preview) {
+                preview.innerHTML = tagsArray.map(t =>
+                    `<span class="skill-tag">${t}</span>`
+                ).join('');
+            }
+        }
+
+        // Dynamic preview — Skills
+        if (skillsQuill) {
+            skillsQuill.on('text-change', function () {
+                renderTags('skills-preview', parseTagsFromQuill(skillsQuill));
+            });
+        }
+
+        // Dynamic preview — Preferred Role
+        if (roleQuill) {
+            roleQuill.on('text-change', function () {
+                renderTags('preferred_role-preview', parseTagsFromQuill(roleQuill));
+            });
+        }
+
+        // Dynamic preview — Experience
+        if (expQuill) {
+            expQuill.on('text-change', function () {
+                renderTags('experience_years-preview', parseTagsFromQuill(expQuill));
+            });
+        }
+
+        const portfolioQuill = initQuill('#portfolio-editor',
+            'Describe your projects or add links (e.g. github.com/yourname, Portfolio: my-portfolio.com)...', true);
+
+        // Dynamic portfolio status indicator
+        if (portfolioQuill) {
+            portfolioQuill.on('text-change', function () {
+                const hasContent = portfolioQuill.getText().trim().length > 0;
+                const dot  = document.getElementById('portfolio-status-dot');
+                const text = document.getElementById('portfolio-status-text');
+                if (dot)  dot.style.background  = hasContent ? '#10b981' : '#e11d48';
+                if (text) text.textContent = hasContent
+                    ? 'Portfolio content present — +10 pts in match score'
+                    : 'No portfolio content yet — add projects or links to unlock +10 pts';
+            });
+        }
+
+        const form = document.getElementById('profileForm');
+        form.addEventListener('submit', function (e) {
+            if (roleQuill) document.getElementById('preferred_role').value  = roleQuill.root.innerHTML;
+            if (skillsQuill) document.getElementById('skills').value          = skillsQuill.root.innerHTML;
+            if (expQuill) document.getElementById('experience_years').value = expQuill.root.innerHTML;
+            if (portfolioQuill) document.getElementById('portfolio').value        = portfolioQuill.root.innerHTML;
         });
-    }
+    });
 </script>
 @endpush
