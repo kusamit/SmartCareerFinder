@@ -47,21 +47,7 @@ class User extends Model
     // Generate profile summary as natural language text
     public function generateProfileSummary(): string
     {
-        $skills  = implode(', ', $this->skillsArray()) ?: 'various skills';
-        $expText = trim(strip_tags($this->experience_years ?? ''));
-        $expDesc = is_numeric($expText) ? "{$expText} year(s) of experience" : "experience: {$expText}";
-        $role    = trim(strip_tags($this->preferred_role ?? '')) ?: 'a suitable role';
-        $loc     = trim(strip_tags($this->location ?? '')) ?: 'any location';
-        
-        $eduParts = [];
-        foreach ($this->educations as $e) {
-            $eduParts[] = "{$e->degree} in {$e->field_of_study} from {$e->school} ({$e->start_year} - {$e->end_year})";
-        }
-        $edu = implode(', ', $eduParts) ?: trim(strip_tags($this->education ?? ''));
-
-        return "{$this->name} is a professional with {$expDesc} in {$skills}. "
-            . ($edu ? "Education: {$edu}. " : '')
-            . "Looking for {$role} based in {$loc}.";
+        return \App\Services\ProfileSummaryGenerator::generate($this);
     }
 
     public function experienceYearsVal(): int

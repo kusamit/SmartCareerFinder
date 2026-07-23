@@ -1,0 +1,129 @@
+body { background: #f1f4f9 !important; }
+
+/* ===== PAGE HEADER ===== */
+.page-header { margin-bottom: 28px; }
+.page-title { font-size: 26px; font-weight: 800; color: #0f172a; letter-spacing: -0.4px; }
+.page-sub   { font-size: 13px; color: #64748b; margin-top: 3px; }
+
+/* ===== APPLICATION CARD ===== */
+.app-card {
+    background: #fff; border: 1.5px solid #f1f5f9; border-radius: 20px;
+    padding: 20px 24px; margin-bottom: 12px; display: flex; align-items: center; gap: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04); transition: all 0.2s ease;
+}
+.app-card:hover { border-color: #c7d2fe; box-shadow: 0 6px 20px rgba(99,102,241,0.1); transform: translateY(-1px); }
+
+.app-info { flex: 1; min-width: 0; }
+.job-link { font-size: 16px; font-weight: 800; color: #0f172a; text-decoration: none; transition: color 0.2s; }
+.job-link:hover { color: #4f46e5; }
+.company-meta { font-size: 13px; color: #64748b; margin-top: 3px; }
+.applied-date { font-size: 11.5px; color: #94a3b8; margin-top: 5px; }
+
+/* ===== SCORE COLUMN ===== */
+.score-col { text-align: center; flex-shrink: 0; padding: 0 16px; border-left: 1px solid #f1f5f9;
+    cursor: pointer; border-radius: 12px; transition: background 0.2s, transform 0.15s; }
+.score-col:hover { background: #f8fafc; transform: scale(1.05); }
+.score-lbl { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #94a3b8; margin-bottom: 3px; }
+.score-val { font-size: 20px; font-weight: 800; font-family: 'JetBrains Mono', monospace; }
+.score-unmatch { font-size: 11px; font-weight: 700; color: #e11d48; }
+.score-sub-lbl { font-size: 8px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
+.mini-bar-wrap { height: 4px; background: #fee2e2; border-radius: 999px; overflow: hidden; margin: 5px auto; width: 56px; }
+.mini-bar-fill { height: 100%; border-radius: 999px; transition: width 0.5s ease; }
+.score-high .mini-bar-fill { background: linear-gradient(90deg, #10b981, #059669); }
+.score-mid  .mini-bar-fill { background: linear-gradient(90deg, #fbbf24, #d97706); }
+.score-low  .mini-bar-fill { background: linear-gradient(90deg, #94a3b8, #64748b); }
+
+.score-high { color: #059669; }
+.score-mid  { color: #d97706; }
+.score-low  { color: #64748b; }
+
+.score-hint {
+    font-size: 9px; color: #c7d2fe; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    margin-top: 4px; text-align: center;
+}
+
+/* ===== STATUS COLUMN ===== */
+.status-col { text-align: center; flex-shrink: 0; padding-left: 16px; border-left: 1px solid #f1f5f9; width: 150px; }
+
+.badge-status {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 4px 12px; border-radius: 999px; font-size: 11.5px; font-weight: 700;
+    text-transform: capitalize;
+}
+.status-applied { background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; }
+
+.status-reviewed { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
+
+.status-shortlisted { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
+
+.status-rejected { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
+
+/* ===== TRACK STATUS BUTTON ===== */
+.track-status-btn {
+    display: flex; flex-direction: column; align-items: center; gap: 5px;
+    background: none; border: none; cursor: pointer; padding: 0;
+    width: 100%;
+}
+.track-hint {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 10px; font-weight: 700; color: #6366f1;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    background: #eef2ff; border: 1px solid #c7d2fe;
+    padding: 2px 8px; border-radius: 999px;
+    transition: background 0.15s;
+}
+.track-status-btn:hover .badge-status { opacity: 0.85; transform: scale(1.04); }
+.track-status-btn:hover .track-hint { background: #e0e7ff; }
+
+.job-closed-tag {
+    display: block; font-size: 10px; font-weight: 700; color: #dc2626;
+    text-transform: uppercase; letter-spacing: 0.05em; margin-top: 4px;
+}
+
+/* ===== EMPTY STATE ===== */
+.empty-state {
+    background: #fff; border: 2px dashed #e2e8f0; border-radius: 20px;
+    padding: 72px 24px; text-align: center;
+}
+.empty-state h3 { font-size: 18px; font-weight: 700; color: #0f172a; margin-bottom: 8px; }
+.empty-state p  { font-size: 13px; color: #94a3b8; margin-bottom: 24px; }
+
+.btn-find {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 11px 20px;
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    color: #fff !important; font-weight: 700; font-size: 14px;
+    border-radius: 12px; border: none; cursor: pointer; text-decoration: none;
+    transition: all 0.25s; box-shadow: 0 6px 20px rgba(79,70,229,0.3);
+}
+.btn-find:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(79,70,229,0.4); color: #fff; }
+
+/* ===== STATUS FILTER TABS ===== */
+.filter-bar {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    background: #fff; border: 1.5px solid #f1f5f9; border-radius: 16px;
+    padding: 10px 16px; margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+.filter-tab {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 5px 14px; border-radius: 999px; font-size: 12px; font-weight: 700;
+    text-decoration: none; border: 1.5px solid transparent;
+    transition: all 0.18s; color: #64748b; background: #f8fafc;
+}
+.filter-tab:hover { border-color: #c7d2fe; color: #4f46e5; background: #eef2ff; }
+.filter-tab.active { background: #4f46e5; color: #fff; border-color: #4f46e5; box-shadow: 0 4px 12px rgba(79,70,229,0.25); }
+.filter-tab .count-badge {
+    background: rgba(255,255,255,0.25); color: inherit;
+    padding: 0 6px; border-radius: 999px; font-size: 10px;
+}
+.filter-tab:not(.active) .count-badge { background: #e2e8f0; color: #64748b; }
+.filter-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+.filter-active-banner {
+    display: flex; align-items: center; justify-content: space-between;
+    background: #eef2ff; border: 1px solid #c7d2fe; border-radius: 12px;
+    padding: 8px 14px; margin-bottom: 16px; font-size: 12px; font-weight: 600; color: #4338ca;
+}
+.filter-active-banner a { color: #4338ca; text-decoration: none; font-weight: 700; opacity: 0.75; }
+.filter-active-banner a:hover { opacity: 1; }

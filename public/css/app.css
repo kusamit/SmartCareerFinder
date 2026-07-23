@@ -1,0 +1,230 @@
+@import 'tailwindcss';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+@source '../**/*.blade.php';
+@source '../**/*.js';
+
+@theme {
+    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+        'Segoe UI Symbol', 'Noto Color Emoji';
+}
+
+/*
+  Professional UI theme
+  - 60% white (light)
+  - 15% dark blue
+  - 15% black
+  - 5% orange
+  - 5% green
+
+  Usage: toggle <html data-theme="dark"> (implemented in layouts/app.blade.php)
+*/
+
+:root {
+  --c-white: #ffffff;
+  --c-black: #0b1220;
+  --c-darkblue: #0f2a5a;
+  --c-orange: #f59e0b;
+  --c-green: #22c55e;
+
+  --bg: #f6f8fb;            /* mostly white */
+  --surface: rgba(15, 42, 90, 0.04);
+  --text: #0b1220;
+  --muted: rgba(11, 18, 32, 0.65);
+  --border: rgba(15, 42, 90, 0.18);
+
+  --primary: #1d4ed8;     /* indigo/darkblue-ish */
+  --primary-strong: #123f9c;
+  --focus: rgba(29, 78, 216, 0.35);
+
+  --success-bg: rgba(34, 197, 94, 0.12);
+  --success-border: rgba(34, 197, 94, 0.35);
+  --success-text: #15803d;
+
+  --error-bg: rgba(245, 158, 11, 0.12);
+  --error-border: rgba(245, 158, 11, 0.35);
+  --error-text: #b45309;
+
+  --input-bg: #ffffff;
+  --input-border: rgba(15, 42, 90, 0.28);
+  --input-text: #000000; /* requested: input filed color should be black */
+  --placeholder: rgba(11, 18, 32, 0.45);
+}
+
+html[data-theme="dark"] {
+  --bg: #0b1220;           /* black */
+  --surface: rgba(255, 255, 255, 0.06);
+  --text: rgba(255, 255, 255, 0.92);
+  --muted: rgba(255, 255, 255, 0.65);
+  --border: rgba(255, 255, 255, 0.12);
+
+  --primary: #60a5fa;     /* brighter for dark */
+  --primary-strong: #3b82f6;
+  --focus: rgba(96, 165, 250, 0.35);
+
+  --success-bg: rgba(34, 197, 94, 0.15);
+  --success-border: rgba(34, 197, 94, 0.35);
+  --success-text: rgba(74, 222, 128, 0.95);
+
+  --error-bg: rgba(245, 158, 11, 0.18);
+  --error-border: rgba(245, 158, 11, 0.35);
+  --error-text: rgba(251, 146, 60, 0.98);
+
+  --input-bg: #ffffff;
+  --input-border: rgba(255, 255, 255, 0.35);
+  --input-text: #000000; /* keep black text per request */
+  --placeholder: rgba(11, 18, 32, 0.45);
+}
+
+/* Base */
+html, body {
+  background: var(--bg);
+  color: var(--text);
+}
+
+a { color: var(--primary); }
+a:hover { color: var(--primary-strong); }
+
+/* Inputs (align/clean/user-friendly) */
+input, textarea, select {
+  width: 100%;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: 12px;
+  padding: 12px 14px;
+  color: var(--input-text);
+  outline: none;
+  transition: box-shadow 160ms ease, border-color 160ms ease;
+}
+
+input::placeholder, textarea::placeholder {
+  color: var(--placeholder);
+}
+
+input:focus, textarea:focus, select:focus {
+  border-color: rgba(29, 78, 216, 0.45);
+  box-shadow: 0 0 0 4px var(--focus);
+}
+
+/* Custom layout classes */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+}
+
+.label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 20px;
+  background: var(--primary);
+  color: #ffffff !important;
+  font-weight: 600;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  border: none;
+}
+
+.btn-primary:hover {
+  background: var(--primary-strong);
+  transform: translateY(-1px);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+.btn-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 20px;
+  background: transparent;
+  border: 1.5px solid var(--border);
+  color: var(--text) !important;
+  font-weight: 600;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.btn-outline:hover {
+  background: var(--surface);
+  border-color: var(--muted);
+  transform: translateY(-1px);
+}
+
+.btn-outline:active {
+  transform: translateY(0);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 8px;
+}
+
+/* Tailwind-compatible helper classes */
+.text-muted { color: var(--muted); }
+.card-surface { background: var(--surface); border: 1px solid var(--border); }
+
+/* Smooth load */
+.fade-up { animation: fadeUp 0.5s ease forwards; }
+@keyframes fadeUp { from { opacity:0; transform: translateY(12px);} to { opacity:1; transform: translateY(0);} }
+
+/* Match score progress bar */
+.match-bar {
+  height: 5px;
+  background: rgba(100, 116, 139, 0.2);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.match-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.5s ease;
+}
+
+/* Quill rendered content display (show.blade.php) */
+.ql-editor-display p { margin-bottom: 0.75em; }
+.ql-editor-display ul {
+  list-style-type: disc;
+  padding-left: 1.5em;
+  margin-bottom: 0.75em;
+}
+.ql-editor-display ol {
+  list-style-type: decimal;
+  padding-left: 1.5em;
+  margin-bottom: 0.75em;
+}
+.ql-editor-display li { margin-bottom: 0.3em; }
+.ql-editor-display strong { font-weight: 700; }
+.ql-editor-display em { font-style: italic; }
+.ql-editor-display u { text-decoration: underline; }
+.ql-editor-display h1 {
+  font-size: 1.4em;
+  font-weight: 700;
+  margin-top: 1em;
+  margin-bottom: 0.4em;
+}
+.ql-editor-display h2 {
+  font-size: 1.2em;
+  font-weight: 700;
+  margin-top: 0.8em;
+  margin-bottom: 0.35em;
+}

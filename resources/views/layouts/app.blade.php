@@ -184,7 +184,6 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex items-center justify-between h-16">
             <a href="{{ $dashboardRoute }}" class="flex items-center gap-2 text-slate-900 dark:text-white hover:opacity-90 transition-opacity no-underline">
-                <div class="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-bold text-sm">J</div>
                 <span class="font-bold text-lg tracking-tight">Smart Career<span class="text-indigo-700">Finder</span></span>
             </a>
             <div class="flex items-center gap-1">

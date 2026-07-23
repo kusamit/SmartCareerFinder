@@ -17,6 +17,10 @@
 @endif
 @endsection
 
+@push('styles')
+<link rel="stylesheet" href="{{ asset('css/jobs-show.css') }}">
+@endpush
+
 @section('content')
 <div class="max-w-5xl mx-auto fade-up">
     {{-- Header Navigation --}}
@@ -71,26 +75,48 @@
             {{-- Match Score & Application Action --}}
             @if(session('user_id') && isset($user) && $user->role === 'seeker')
                 @php
-                    $score   = $matchScore ?? 0;
-                    $applied = \App\Models\Application::where('job_id', $job->id)->where('user_id', $user->id)->exists();
+                    $score        = $matchScore ?? 0;
+                    $applied      = \App\Models\Application::where('job_id', $job->id)->where('user_id', $user->id)->exists();
+                    $details      = $user->matchDetails($job, $score);
+                    $matchDataArr = [
+                        'name'             => $user->name,
+                        'job_title'        => $job->title,
+                        'score'            => $score,
+                        'matched_skills'   => array_values($details['matched_skills']),
+                        'unmatched_skills' => array_values($details['unmatched_skills']),
+                        'location_match'   => $details['location_match'],
+                        'role_match'       => $details['role_match'],
+                        'seeker_location'  => $details['seeker_location'],
+                        'job_location'     => $details['job_location'],
+                        'seeker_role'      => $details['seeker_role'],
+                        'exp_match'        => $details['exp_match'],
+                        'exp_message'      => $details['exp_message'],
+                        'portfolio_match'  => $details['portfolio_match'],
+                        'composite'        => $details['composite'],
+                    ];
                     
                     // Explicit classes to prevent Tailwind purging issues
                     if ($score >= 70) {
                         $scoreColorClass = 'text-emerald-600 dark:text-emerald-400';
-                        $barColorClass = 'bg-emerald-500';
+                        $barColorClass   = 'bg-emerald-500';
                     } elseif ($score >= 40) {
                         $scoreColorClass = 'text-amber-600 dark:text-amber-400';
-                        $barColorClass = 'bg-amber-500';
+                        $barColorClass   = 'bg-amber-500';
                     } else {
                         $scoreColorClass = 'text-slate-600 dark:text-slate-400';
-                        $barColorClass = 'bg-slate-500';
+                        $barColorClass   = 'bg-slate-500';
                     }
                 @endphp
-                <div class="shrink-0 text-center p-6 rounded-2xl bg-slate-50 dark:bg-slate-800/30 border border-slate-100 dark:border-slate-800 w-full md:w-auto md:min-w-[180px]">
-                    <div class="text-5xl font-extrabold mono {{ $scoreColorClass }} mb-1">{{ $score }}%</div>
-                    <div class="text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-wider mb-4">Match Score</div>
-                    <div class="w-full bg-slate-200 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden mb-6">
-                        <div class="h-full rounded-full {{ $barColorClass }} transition-all duration-500" style="width: {{ $score }}%"></div>
+                <div class="shrink-0 text-center p-6 rounded-2xl bg-slate-50 dark:bg-slate-800/30 border border-slate-100 dark:border-slate-800 w-full md:w-auto md:min-w-[200px]">
+                    {{-- Clickable score zone --}}
+                    <div class="cursor-pointer p-3 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-all duration-200 group mb-3"
+                         data-match='@json($matchDataArr)'
+                         title="Click to see match breakdown (matches & non-matches)">
+                        <div class="text-5xl font-extrabold mono {{ $scoreColorClass }} mb-1 group-hover:scale-105 transition-transform duration-200">{{ $score }}%</div>
+                        <div class="text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">Match Score</div>
+                        <div class="w-full bg-slate-200 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden mb-1">
+                            <div class="h-full rounded-full {{ $barColorClass }} transition-all duration-500" style="width: {{ $score }}%"></div>
+                        </div>
                     </div>
 
                     @if($applied)
@@ -175,83 +201,5 @@
         </div>
     </div>
 </div>
-
-<style>
-    /* ── Quill-generated HTML display — exact mirror of Quill's own .ql-editor styles ── */
-    .ql-editor-display {
-        font-size: 14px;
-        line-height: 1.75;
-        color: inherit;
-        word-break: break-word;
-    }
-
-    /* Paragraphs */
-    .ql-editor-display p {
-        margin: 0 0 0.6em;
-    }
-    .ql-editor-display p:last-child { margin-bottom: 0; }
-
-    /* Lists */
-    .ql-editor-display ul,
-    .ql-editor-display ol {
-        padding-left: 1.6em;
-        margin: 0.4em 0 0.8em;
-    }
-    .ql-editor-display ul { list-style-type: disc; }
-    .ql-editor-display ol { list-style-type: decimal; }
-    .ql-editor-display li { margin-bottom: 0.3em; }
-
-    /* Nested list indent levels (Quill uses data-list + class ql-indent-N) */
-    .ql-editor-display .ql-indent-1 { padding-left: 3em; }
-    .ql-editor-display .ql-indent-2 { padding-left: 6em; }
-    .ql-editor-display .ql-indent-3 { padding-left: 9em; }
-
-    /* Headings */
-    .ql-editor-display h1 { font-size: 1.5em; font-weight: 800; margin: 0.8em 0 0.4em; }
-    .ql-editor-display h2 { font-size: 1.25em; font-weight: 700; margin: 0.7em 0 0.35em; }
-    .ql-editor-display h3 { font-size: 1.1em; font-weight: 700; margin: 0.6em 0 0.3em; }
-
-    /* Inline styles */
-    .ql-editor-display strong, .ql-editor-display b { font-weight: 700; }
-    .ql-editor-display em, .ql-editor-display i { font-style: italic; }
-    .ql-editor-display u { text-decoration: underline; }
-    .ql-editor-display s { text-decoration: line-through; }
-
-    /* Blockquote */
-    .ql-editor-display blockquote {
-        border-left: 3px solid #6366f1;
-        padding: 6px 14px;
-        margin: 0.6em 0;
-        background: rgba(99,102,241,0.05);
-        border-radius: 0 8px 8px 0;
-        font-style: italic;
-        color: #475569;
-    }
-
-    /* Links */
-    .ql-editor-display a {
-        color: #6366f1;
-        text-decoration: underline;
-        text-underline-offset: 2px;
-    }
-    .ql-editor-display a:hover { color: #4f46e5; }
-
-    /* Code */
-    .ql-editor-display code {
-        background: #f1f5f9;
-        padding: 1px 5px;
-        border-radius: 4px;
-        font-family: monospace;
-        font-size: 0.9em;
-    }
-    .ql-editor-display pre {
-        background: #0f172a;
-        color: #e2e8f0;
-        padding: 14px 18px;
-        border-radius: 10px;
-        overflow-x: auto;
-        font-size: 13px;
-    }
-</style>
 
 @endsection

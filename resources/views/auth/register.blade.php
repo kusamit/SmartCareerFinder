@@ -1,107 +1,320 @@
 @extends('layouts.app')
 @section('title', 'Register')
 
+@push('styles')
+<style>
+    /* Page background override */
+    body { background: #f1f4f9 !important; }
+
+    /* Kill autofill tint everywhere on this page */
+    .register-page input:-webkit-autofill,
+    .register-page input:-webkit-autofill:hover,
+    .register-page input:-webkit-autofill:focus {
+        -webkit-box-shadow: 0 0 0 1000px #f8fafc inset !important;
+        -webkit-text-fill-color: #0f172a !important;
+        border-color: #e2e8f0 !important;
+    }
+
+    /* Kill the dark card border inherited from Tailwind/app.css */
+    .register-card * { box-sizing: border-box; }
+
+    .register-page {
+        min-height: calc(100vh - 64px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 40px 16px;
+    }
+
+    .register-card {
+        background: #ffffff !important;
+        border: 1.5px solid #e8edf5 !important;
+        border-radius: 24px !important;
+        padding: 44px 40px !important;
+        box-shadow: 0 20px 60px rgba(15, 23, 42, 0.07) !important;
+        width: 100%;
+        max-width: 480px;
+    }
+
+    .reg-header {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+
+    .reg-title {
+        font-size: 26px;
+        font-weight: 800;
+        color: #0f172a;
+        letter-spacing: -0.5px;
+        margin: 0 0 6px 0;
+    }
+
+    .reg-subtitle {
+        font-size: 14px;
+        color: #64748b;
+        margin: 0;
+    }
+
+    /* Role toggle */
+    .role-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin-bottom: 24px;
+    }
+
+    .role-option {
+        cursor: pointer;
+        display: block;
+    }
+
+    .role-option input[type="radio"] {
+        position: absolute;
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    .role-btn {
+        display: block;
+        background: #f8fafc;
+        border: 2px solid #e2e8f0;
+        border-radius: 16px;
+        padding: 14px 12px;
+        text-align: center;
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+
+    .role-btn:hover {
+        border-color: #c7d2fe;
+        background: #f5f3ff;
+    }
+
+    .role-btn.selected {
+        border-color: #4f46e5;
+        background: #eef2ff;
+        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+    }
+
+    .role-btn-title {
+        font-size: 13.5px;
+        font-weight: 700;
+        color: #0f172a;
+        display: block;
+    }
+
+    .role-btn.selected .role-btn-title {
+        color: #4f46e5;
+    }
+
+    .role-btn-sub {
+        font-size: 11px;
+        color: #94a3b8;
+        display: block;
+        margin-top: 3px;
+    }
+
+    /* Error box */
+    .reg-error {
+        background: #fef2f2;
+        border: 1.5px solid #fecaca;
+        color: #b91c1c;
+        padding: 12px 16px;
+        border-radius: 12px;
+        font-size: 13px;
+        margin-bottom: 20px;
+    }
+
+    /* Form fields */
+    .field {
+        margin-bottom: 16px;
+    }
+
+    .field-label {
+        display: block;
+        font-size: 13px;
+        font-weight: 600;
+        color: #334155;
+        margin-bottom: 7px;
+    }
+
+    .field-input {
+        display: block;
+        width: 100%;
+        padding: 12px 16px;
+        border-radius: 12px;
+        background: #f8fafc;
+        border: 1.5px solid #e2e8f0;
+        color: #0f172a;
+        font-size: 14px;
+        outline: none;
+        transition: all 0.2s;
+        box-sizing: border-box;
+    }
+
+    .field-input:focus {
+        border-color: #4f46e5;
+        background: #ffffff;
+        box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
+    }
+
+    .field-input::placeholder {
+        color: #94a3b8;
+    }
+
+    /* Submit button */
+    .reg-submit {
+        display: block;
+        width: 100%;
+        padding: 14px;
+        margin-top: 24px;
+        border-radius: 14px;
+        background: linear-gradient(135deg, #4f46e5, #7c3aed);
+        color: #ffffff;
+        font-size: 15px;
+        font-weight: 700;
+        letter-spacing: 0.01em;
+        border: none;
+        cursor: pointer;
+        transition: all 0.25s;
+        box-shadow: 0 6px 20px rgba(79, 70, 229, 0.28);
+    }
+
+    .reg-submit:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 28px rgba(79, 70, 229, 0.38);
+    }
+
+    /* Footer text */
+    .reg-footer {
+        text-align: center;
+        margin-top: 22px;
+        font-size: 13.5px;
+        color: #64748b;
+    }
+
+    .reg-footer a {
+        color: #4f46e5;
+        font-weight: 700;
+        text-decoration: none;
+        margin-left: 4px;
+    }
+
+    .reg-footer a:hover {
+        text-decoration: underline;
+    }
+
+    /* Divider */
+    .reg-divider {
+        height: 1px;
+        background: #f1f5f9;
+        margin: 0 0 22px 0;
+    }
+</style>
+@endpush
+
 @section('content')
-<div class="min-h-[80vh] flex items-center justify-center py-8">
-    <div class="w-full max-w-lg fade-up">
-        <div class="text-center mb-8">
-            <div class="w-14 h-14 rounded-2xl bg-indigo-600 flex items-center justify-center text-white font-bold text-2xl mx-auto mb-4">J</div>
-            <h1 class="text-3xl font-bold tracking-tight">Create Account</h1>
-            <p class="text-slate-400 mt-1 text-sm">Join Career Finder and find your perfect match</p>
+<div class="register-page">
+    <div class="register-card">
+
+        <div class="reg-header">
+            <h1 class="reg-title">Create Account</h1>
+            <p class="reg-subtitle">Join Smart CareerFinder and land your perfect role</p>
         </div>
 
-        <div class="card p-8 card-glow">
-            @if ($errors->any())
-            <div class="bg-red-900/40 border border-red-600/40 text-red-300 px-4 py-3 rounded-xl text-sm mb-6">
-                @foreach($errors->all() as $e)
-                <div>• {{ $e }}</div>
-                @endforeach
-            </div>
-            @endif
+        <div class="reg-divider"></div>
 
-            {{-- Role Toggle --}}
-            <div class="mb-6">
-                <label class="label">I am a...</label>
-                <div class="grid grid-cols-2 gap-3" id="roleSelector">
-                    <label class="role-card cursor-pointer" for="role_seeker">
-                        <input type="radio" id="role_seeker" name="role_display" value="seeker" class="sr-only" checked>
-                        <div class="role-box border-2 border-indigo-500 bg-indigo-500/10 rounded-xl p-4 text-center transition-all">
-                            <div class="font-semibold text-sm">Job Seeker</div>
-                            <div class="text-slate-400 text-xs mt-0.5">Looking for work</div>
-                        </div>
-                    </label>
-                    <label class="role-card cursor-pointer" for="role_provider">
-                        <input type="radio" id="role_provider" name="role_display" value="provider" class="sr-only">
-                        <div class="role-box border-2 border-slate-700 bg-slate-800/30 rounded-xl p-4 text-center transition-all">
-                            <div class="font-semibold text-sm">Job Provider</div>
-                            <div class="text-slate-400 text-xs mt-0.5">Hiring talent</div>
-                        </div>
-                    </label>
-                </div>
-            </div>
-
-            <form method="POST" action="{{ route('register.post') }}" class="space-y-4" id="registerForm">
-                @csrf
-                <input type="hidden" name="role" id="roleInput" value="seeker">
-
-                <div>
-                    <label class="label">Full Name</label>
-                    <input type="text" name="name" value="{{ old('name') }}" class="input" placeholder="Your full name" required>
-                </div>
-
-                {{-- Provider extra field --}}
-                <div id="companyField" class="hidden">
-                    <label class="label">Company Name</label>
-                    <input type="text" name="company_name" value="{{ old('company_name') }}" class="input" placeholder="Your company name">
-                </div>
-
-                <div>
-                    <label class="label">Email Address</label>
-                    <input type="email" name="email" value="{{ old('email') }}" class="input" placeholder="you@example.com" required>
-                </div>
-                <div>
-                    <label class="label">Password</label>
-                    <input type="password" name="password" class="input" placeholder="Min 6 characters" required>
-                </div>
-                <div>
-                    <label class="label">Confirm Password</label>
-                    <input type="password" name="password_confirmation" class="input" placeholder="Repeat password" required>
-                </div>
-
-                <button type="submit" class="btn-primary w-full justify-center flex mt-2">Create Account</button>
-            </form>
-
-            <p class="text-center text-slate-400 text-sm mt-6">
-                Already have an account?
-                <a href="{{ route('login') }}" class="text-indigo-400 hover:text-indigo-300 font-medium">Sign in</a>
-            </p>
+        @if ($errors->any())
+        <div class="reg-error">
+            @foreach($errors->all() as $e)
+            <div>• {{ $e }}</div>
+            @endforeach
         </div>
+        @endif
+
+        {{-- Role Selector --}}
+        <div style="margin-bottom: 22px;">
+            <span class="field-label">I want to...</span>
+            <div class="role-row" id="roleSelector">
+                <label class="role-option" for="role_seeker">
+                    <input type="radio" id="role_seeker" name="role_display" value="seeker" checked>
+                    <div class="role-btn selected" id="box_seeker">
+                        <span class="role-btn-title">Find a Job</span>
+                        <span class="role-btn-sub">Job Seeker</span>
+                    </div>
+                </label>
+                <label class="role-option" for="role_provider">
+                    <input type="radio" id="role_provider" name="role_display" value="provider">
+                    <div class="role-btn" id="box_provider">
+                        <span class="role-btn-title">Hire Talent</span>
+                        <span class="role-btn-sub">Job Provider</span>
+                    </div>
+                </label>
+            </div>
+        </div>
+
+        <form method="POST" action="{{ route('register.post') }}" id="registerForm">
+            @csrf
+            <input type="hidden" name="role" id="roleInput" value="seeker">
+
+            <div class="field">
+                <label class="field-label" for="name">Full Name</label>
+                <input type="text" id="name" name="name" value="{{ old('name') }}" class="field-input" placeholder="e.g. John Doe" required>
+            </div>
+
+            <div class="field" id="companyField" style="display: none;">
+                <label class="field-label" for="company_name">Company Name</label>
+                <input type="text" id="company_name" name="company_name" value="{{ old('company_name') }}" class="field-input" placeholder="e.g. TechCorp Solutions">
+            </div>
+
+            <div class="field">
+                <label class="field-label" for="email">Email Address</label>
+                <input type="email" id="email" name="email" value="{{ old('email') }}" class="field-input" placeholder="you@example.com" required>
+            </div>
+
+            <div class="field">
+                <label class="field-label" for="password">Password</label>
+                <input type="password" id="password" name="password" class="field-input" placeholder="Minimum 6 characters" required>
+            </div>
+
+            <div class="field">
+                <label class="field-label" for="password_confirmation">Confirm Password</label>
+                <input type="password" id="password_confirmation" name="password_confirmation" class="field-input" placeholder="Repeat your password" required>
+            </div>
+
+            <button type="submit" class="reg-submit">Create Account</button>
+        </form>
+
+        <p class="reg-footer">
+            Already have an account?
+            <a href="{{ route('login') }}">Sign in</a>
+        </p>
+
     </div>
 </div>
 
 @push('scripts')
 <script>
-    const radios = document.querySelectorAll('input[name="role_display"]');
-    const roleInput = document.getElementById('roleInput');
+    const roleInput   = document.getElementById('roleInput');
     const companyField = document.getElementById('companyField');
+    const boxSeeker   = document.getElementById('box_seeker');
+    const boxProvider = document.getElementById('box_provider');
 
-    radios.forEach(radio => {
-        radio.addEventListener('change', function() {
+    document.querySelectorAll('input[name="role_display"]').forEach(radio => {
+        radio.addEventListener('change', function () {
             roleInput.value = this.value;
-            companyField.classList.toggle('hidden', this.value !== 'provider');
+            companyField.style.display = (this.value === 'provider') ? 'block' : 'none';
 
-            // Update card styles
-            document.querySelectorAll('.role-card').forEach(card => {
-                const box = card.querySelector('.role-box');
-                const isSelected = card.querySelector('input').value === this.value;
-                box.classList.toggle('border-indigo-500', isSelected);
-                box.classList.toggle('bg-indigo-500/10', isSelected);
-                box.classList.toggle('border-slate-700', !isSelected);
-                box.classList.toggle('bg-slate-800/30', !isSelected);
-            });
+            if (this.value === 'seeker') {
+                boxSeeker.classList.add('selected');
+                boxProvider.classList.remove('selected');
+            } else {
+                boxProvider.classList.add('selected');
+                boxSeeker.classList.remove('selected');
+            }
         });
     });
 </script>
 @endpush
 @endsection
-

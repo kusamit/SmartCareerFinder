@@ -10,253 +10,7 @@
 
 @push('styles')
 <link href="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.snow.css" rel="stylesheet">
-<style>
-    body { background: #f1f4f9 !important; }
-
-    /* ===== QUILL EDITOR ===== */
-    .editor-wrapper {
-        border: 1.5px solid #e2e8f0;
-        border-radius: 14px;
-        overflow: hidden;
-        transition: border-color 0.2s;
-    }
-    .editor-wrapper:focus-within {
-        border-color: #6366f1;
-    }
-    .ql-toolbar.ql-snow {
-        border: none !important;
-        border-bottom: 1px solid #f1f5f9 !important;
-        background: #f8fafc;
-        padding: 8px 12px;
-        display: flex;
-        flex-wrap: nowrap;
-        overflow-x: auto;
-        gap: 2px;
-    }
-    .ql-toolbar.ql-snow .ql-formats { margin-right: 8px; }
-    .ql-container.ql-snow {
-        border: none !important;
-        background: #fff;
-        color: #0f172a;
-        font-family: 'Sora', sans-serif;
-        font-size: 14px;
-        min-height: 120px;
-    }
-    .ql-editor { min-height: 120px; padding: 14px 16px; line-height: 1.7; }
-    .ql-editor.ql-blank::before {
-        color: #94a3b8 !important;
-        font-style: normal !important;
-        left: 16px;
-    }
-    .ql-snow .ql-picker { color: #475569; }
-    .ql-snow .ql-stroke { stroke: #475569; }
-    .ql-snow .ql-fill { fill: #475569; }
-    .ql-snow button:hover .ql-stroke,
-    .ql-snow .ql-picker-label:hover .ql-stroke { stroke: #6366f1 !important; }
-    .ql-snow button:hover .ql-fill { fill: #6366f1 !important; }
-    .ql-snow button.ql-active .ql-stroke { stroke: #6366f1 !important; }
-    .ql-snow button.ql-active .ql-fill { fill: #6366f1 !important; }
-
-    .profile-page-wrapper {
-        max-width: 820px;
-        margin: 0 auto;
-        padding: 0 20px 60px;
-    }
-
-    /* ===== HERO ===== */
-    .profile-hero {
-        background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #312e81 100%);
-        border-radius: 24px;
-        padding: 40px 44px;
-        margin-bottom: 28px;
-        position: relative;
-        overflow: hidden;
-        box-shadow: 0 20px 60px rgba(15,23,42,0.3);
-    }
-    .profile-hero::before {
-        content: '';
-        position: absolute;
-        top: -80px; right: -60px;
-        width: 280px; height: 280px;
-        background: rgba(99,102,241,0.15);
-        border-radius: 50%;
-    }
-    .profile-hero::after {
-        content: '';
-        position: absolute;
-        bottom: -80px; left: -40px;
-        width: 220px; height: 220px;
-        background: rgba(124,58,237,0.12);
-        border-radius: 50%;
-    }
-    .profile-hero-inner { position: relative; z-index: 1; display: flex; align-items: center; gap: 24px; }
-    .profile-avatar {
-        width: 72px; height: 72px;
-        border-radius: 20px;
-        background: linear-gradient(135deg, #6366f1, #8b5cf6);
-        display: flex; align-items: center; justify-content: center;
-        font-size: 28px; font-weight: 800; color: #fff;
-        box-shadow: 0 8px 24px rgba(99,102,241,0.4);
-        flex-shrink: 0;
-        letter-spacing: -1px;
-    }
-    .profile-hero h1 { font-size: 24px; font-weight: 800; color: #fff; margin-bottom: 4px; letter-spacing: -0.3px; }
-    .profile-hero p { color: rgba(255,255,255,0.6); font-size: 13px; }
-    .profile-completeness {
-        margin-left: auto;
-        text-align: center;
-        flex-shrink: 0;
-    }
-    .completeness-ring {
-        width: 64px; height: 64px;
-        border-radius: 50%;
-        display: flex; align-items: center; justify-content: center;
-        background: conic-gradient(#6366f1 0deg, rgba(255,255,255,0.15) 0deg);
-        position: relative;
-        margin: 0 auto 6px;
-    }
-    .completeness-inner {
-        width: 48px; height: 48px;
-        background: rgba(15,23,42,0.5);
-        border-radius: 50%;
-        display: flex; align-items: center; justify-content: center;
-        font-size: 13px; font-weight: 800; color: #fff;
-    }
-    .completeness-label { color: rgba(255,255,255,0.5); font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; }
-
-    /* ===== AI SUMMARY ===== */
-    .ai-summary-card {
-        background: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(124,58,237,0.06));
-        border: 1.5px solid rgba(99,102,241,0.2);
-        border-radius: 18px;
-        padding: 20px 24px;
-        margin-bottom: 20px;
-        position: relative;
-        overflow: hidden;
-    }
-    .ai-summary-card::before {
-        content: '🤖';
-        position: absolute;
-        right: 20px; top: 50%;
-        transform: translateY(-50%);
-        font-size: 40px;
-        opacity: 0.07;
-    }
-    .ai-badge {
-        display: inline-flex; align-items: center; gap: 5px;
-        background: linear-gradient(135deg, #6366f1, #8b5cf6);
-        color: #fff;
-        font-size: 10px; font-weight: 700;
-        text-transform: uppercase; letter-spacing: 0.1em;
-        padding: 3px 10px;
-        border-radius: 999px;
-        margin-bottom: 10px;
-    }
-    .ai-summary-text { color: #475569; font-size: 13.5px; line-height: 1.7; font-style: italic; }
-
-    /* ===== FORM CARD ===== */
-    .form-card {
-        background: #fff;
-        border-radius: 24px;
-        box-shadow: 0 4px 24px rgba(0,0,0,0.07);
-        overflow: hidden;
-    }
-    .form-section {
-        padding: 28px 36px;
-        border-bottom: 1px solid #f1f5f9;
-    }
-    .form-section:last-child { border-bottom: none; }
-    .form-section-title {
-        font-size: 11px; font-weight: 700;
-        text-transform: uppercase; letter-spacing: 0.12em;
-        color: #94a3b8; margin-bottom: 20px;
-        display: flex; align-items: center; gap: 8px;
-    }
-    .form-section-title::after {
-        content: ''; flex: 1; height: 1px; background: #f1f5f9;
-    }
-
-    /* ===== FIELDS ===== */
-    .field-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 18px; }
-    .field-group:last-child { margin-bottom: 0; }
-    .field-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-    @media (max-width: 600px) { .field-grid-2 { grid-template-columns: 1fr; } }
-
-    .field-label {
-        font-size: 13px; font-weight: 600; color: #334155;
-        display: flex; align-items: center; gap: 6px;
-    }
-    .field-label .hint { font-weight: 400; color: #94a3b8; font-size: 12px; }
-
-    .field-input {
-        width: 100%; padding: 13px 16px;
-        border: 1.5px solid #e2e8f0; border-radius: 14px;
-        background: #f8fafc; color: #0f172a;
-        font-size: 14px; font-family: 'Sora', sans-serif;
-        outline: none; transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
-    }
-    .field-input::placeholder { color: #94a3b8; }
-    .field-input:focus {
-        border-color: #6366f1; background: #fff;
-        box-shadow: 0 0 0 4px rgba(99,102,241,0.12);
-    }
-    .field-input:hover:not(:focus) { border-color: #c7d2fe; }
-
-    /* ===== SKILLS TAGS ===== */
-    .skills-tags-preview { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; min-height: 28px; }
-    .skill-tag {
-        display: inline-flex; align-items: center;
-        padding: 4px 12px;
-        background: linear-gradient(135deg, rgba(99,102,241,0.12), rgba(124,58,237,0.12));
-        border: 1px solid rgba(99,102,241,0.25);
-        color: #6366f1; border-radius: 999px;
-        font-size: 12px; font-weight: 600;
-    }
-
-    /* ===== FOOTER ===== */
-    .form-actions {
-        padding: 24px 36px; background: #f8fafc;
-        border-top: 1px solid #f1f5f9;
-        display: flex; gap: 12px; align-items: center;
-    }
-    .btn-submit {
-        flex: 1; display: inline-flex; align-items: center;
-        justify-content: center; gap: 8px;
-        padding: 14px 28px;
-        background: linear-gradient(135deg, #4f46e5, #7c3aed);
-        color: #fff !important; font-weight: 700; font-size: 15px;
-        border-radius: 14px; border: none; cursor: pointer;
-        transition: all 0.25s ease;
-        box-shadow: 0 8px 24px rgba(79,70,229,0.3);
-    }
-    .btn-submit:hover { transform: translateY(-2px); box-shadow: 0 14px 32px rgba(79,70,229,0.4); }
-    .btn-submit:active { transform: translateY(0); }
-
-    /* ===== INFO BOX ===== */
-    .info-box {
-        margin-top: 20px;
-        background: #fff;
-        border: 1.5px solid #e2e8f0;
-        border-radius: 18px;
-        padding: 18px 22px;
-        display: flex; align-items: flex-start; gap: 12px;
-    }
-    .info-icon {
-        width: 36px; height: 36px; border-radius: 10px;
-        background: linear-gradient(135deg, rgba(99,102,241,0.1), rgba(124,58,237,0.1));
-        display: flex; align-items: center; justify-content: center;
-        font-size: 18px; flex-shrink: 0;
-    }
-    .info-box p { color: #64748b; font-size: 13px; line-height: 1.6; }
-    .info-box strong { color: #6366f1; }
-
-    /* ===== ERROR ===== */
-    .form-error {
-        background: #fef2f2; border: 1.5px solid #fecaca;
-        color: #b91c1c; padding: 14px 18px;
-        border-radius: 14px; font-size: 13px; margin-bottom: 0;
-    }
-</style>
+<link rel="stylesheet" href="{{ asset('css/seeker-profile.css') }}">
 @endpush
 
 @section('content')
@@ -364,13 +118,13 @@
                 <div class="field-group">
                     <label class="field-label">
                         Experience
-                        <span class="hint">List your skill experiences (e.g. Experience in PHP with 3 years, 4years in Website development)...</span>
+                        <span class="hint">List your skill experiences</span>
                     </label>
                     <input type="hidden" name="experience_years" id="experience_years" value="{{ old('experience_years', $user->experience_years) }}">
                     <div class="editor-wrapper">
                         <div id="experience_years-editor">{!! old('experience_years', $user->experience_years) !!}</div>
                     </div>
-                    <div id="experience_years-preview" class="skills-tags-preview" style="margin-top: 12px;">
+                    <div id="experience_years-preview" class="skills-tags-preview" style="display: none !important;">
                         @php
                             $rawExp = strip_tags($user->experience_years ?? '');
                             $rawExp = html_entity_decode($rawExp, ENT_QUOTES | ENT_HTML5, 'UTF-8');
@@ -395,7 +149,7 @@
                     <div class="editor-wrapper">
                         <div id="preferred_role-editor">{!! old('preferred_role', $user->preferred_role) !!}</div>
                     </div>
-                    <div id="preferred_role-preview" class="skills-tags-preview" style="margin-top: 12px;">
+                    <div id="preferred_role-preview" class="skills-tags-preview" style="display: none !important;">
                         @foreach($user->preferredRoleArray() as $role)
                             <span class="skill-tag">{{ $role }}</span>
                         @endforeach
@@ -415,7 +169,7 @@
                     <div class="editor-wrapper">
                         <div id="skills-editor">{!! old('skills', $user->skills) !!}</div>
                     </div>
-                    <div id="skills-preview" class="skills-tags-preview" style="margin-top: 12px;">
+                    <div id="skills-preview" class="skills-tags-preview" style="display: none !important;">
                         @foreach($user->skillsArray() as $sk)
                             <span class="skill-tag">{{ $sk }}</span>
                         @endforeach
@@ -426,14 +180,14 @@
                 <div class="field-group" style="margin-top:24px;">
                     <label class="field-label">
                         Projects / Portfolio
-                        <span class="hint">Describe your projects or add links (GitHub, Behance, Dribbble, etc.) — awards +10 pts in match score</span>
+                        <span class="hint">Describe your projects or add links</span>
                     </label>
                     <input type="hidden" name="portfolio" id="portfolio" value="{{ old('portfolio', $user->portfolio) }}">
                     <div class="editor-wrapper">
                         <div id="portfolio-editor">{!! old('portfolio', $user->portfolio) !!}</div>
                     </div>
-                    {{-- Live portfolio indicator --}}
-                    <div style="margin-top:10px; display:flex; align-items:center; gap:8px; font-size:12.5px;">
+                    {{-- Live portfolio indicator (hidden) --}}
+                    <div style="display: none !important;">
                         <span id="portfolio-status-dot" style="width:8px;height:8px;border-radius:50%;background:{{ trim(strip_tags($user->portfolio ?? '')) ? '#10b981' : '#e11d48' }};flex-shrink:0;"></span>
                         <span id="portfolio-status-text" style="color:#64748b;">
                             @if(trim(strip_tags($user->portfolio ?? '')))
@@ -455,8 +209,8 @@
         </form>
     </div>
 
-    {{-- Info box --}}
-    <div class="info-box" style="margin-top: 20px;">
+    {{-- Info box (hidden) --}}
+    <div class="info-box" style="display: none !important; margin-top: 20px;">
         <div class="info-icon">i</div>
         <p>
             <strong>How it works:</strong>
@@ -512,7 +266,7 @@
             'List your skills, technologies, frameworks, or tools (e.g. Python, Django, REST API, Docker)...');
 
         const expQuill = initQuill('#experience_years-editor',
-            'List your skill experiences (e.g. Experience in PHP with 3 years, 4years in Website development)...');
+            'List your skill experiences...');
 
         // Helper: parse Quill plain text into tag array
         function parseTagsFromQuill(quillInstance) {
@@ -557,7 +311,7 @@
         }
 
         const portfolioQuill = initQuill('#portfolio-editor',
-            'Describe your projects or add links (e.g. github.com/yourname, Portfolio: my-portfolio.com)...', true);
+            'Describe your projects or add links...', true);
 
         // Dynamic portfolio status indicator
         if (portfolioQuill) {
@@ -571,6 +325,7 @@
                     : 'No portfolio content yet — add projects or links to unlock +10 pts';
             });
         }
+
 
         const form = document.getElementById('profileForm');
         form.addEventListener('submit', function (e) {

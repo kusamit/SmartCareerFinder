@@ -28,8 +28,7 @@ def check(label, condition, expected=None, actual=None):
 
 results = []
 
-# ═══════════════════════════════════════════════════════════════
-print("\n══════════ 1. BOUNDARY-SAFE match_term() ══════════")
+print("\n1. BOUNDARY-SAFE match_term()")
 
 cases = [
     # (term, text, expected, label)
@@ -49,8 +48,7 @@ for term, text, expected, label in cases:
     ok = check(label, result == expected, expected, result)
     results.append(ok)
 
-# ═══════════════════════════════════════════════════════════════
-print("\n══════════ 2. SKILL EXPERIENCE PARSING ══════════")
+print("\n2. SKILL EXPERIENCE PARSING")
 
 # Seeker profile: individual skill experience  
 seeker_text = "PHP 2 years, Python 3 years, React 1 year, JavaScript 4 years"
@@ -71,8 +69,7 @@ print(f"  Parsed: {parsed_html}")
 results.append(check("Python from HTML = 3", parsed_html.get("python", 0) == 3, 3, parsed_html.get("python", 0)))
 results.append(check("Docker from HTML = 2", parsed_html.get("docker", 0) == 2, 2, parsed_html.get("docker", 0)))
 
-# ═══════════════════════════════════════════════════════════════
-print("\n══════════ 3. JOB REQUIREMENTS PARSING ══════════")
+print("\n3. JOB REQUIREMENTS PARSING")
 
 job_req = "Requirements: Python 2+ years, React 1 year experience, Docker knowledge required"
 parsed_req = SkillExperienceMatcher.parse_skill_requirements(job_req)
@@ -81,8 +78,7 @@ print(f"  Parsed: {parsed_req}")
 results.append(check("Job requires Python >= 2 yrs", parsed_req.get("python", 0) >= 2, ">=2", parsed_req.get("python", 0)))
 results.append(check("Job requires React >= 1 yr", parsed_req.get("react", 0) >= 1, ">=1", parsed_req.get("react", 0)))
 
-# ═══════════════════════════════════════════════════════════════
-print("\n══════════ 4. CALCULATE_MATCH SCENARIOS ══════════")
+print("\n4. CALCULATE_MATCH SCENARIOS")
 
 # Test A: Perfect match
 user_a = "Python 3 years, React 2 years, Docker 1 year"
@@ -134,8 +130,7 @@ print(f"     Job : {job_e}")
 print(f"     Score: {score_e:.2f} (MUST be < 0.2, previously was broken ~0.57)")
 results.append(check("Ram Prasad zero match < 0.2", score_e < 0.2, "<0.2", round(score_e, 2)))
 
-# ═══════════════════════════════════════════════════════════════
-print("\n══════════ 5. VECTOR DATABASE ══════════")
+print("\n5. VECTOR DATABASE")
 
 db = VectorDatabase()
 print(f"  Users in DB : {len(db.users)}")
@@ -146,8 +141,7 @@ results.append(check("DB has users", len(db.users) > 0, ">0", len(db.users)))
 results.append(check("DB has jobs", len(db.jobs) > 0, ">0", len(db.jobs)))
 results.append(check("Vocab is loaded", bool(db.vocab_data), True, bool(db.vocab_data)))
 
-# ═══════════════════════════════════════════════════════════════
-print("\n══════════ 6. FAISS SEARCH SANITY ══════════")
+print("\n6. FAISS SEARCH SANITY")
 
 if db.users and db.jobs:
     # Pick first user and search for jobs
@@ -190,8 +184,7 @@ if db.users and db.jobs:
 else:
     print(f"  {WARN} Database is empty, skipping search test")
 
-# ═══════════════════════════════════════════════════════════════
-print("\n══════════ SUMMARY ══════════")
+print("\nSUMMARY")
 total = len(results)
 passed = sum(results)
 failed = total - passed
