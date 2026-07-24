@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 @section('title', isset($job) ? 'Edit Job' : 'Post Job')
 
 @section('nav_links')
@@ -17,9 +17,6 @@
 
     {{-- ===== HERO HEADER ===== --}}
     <div class="form-hero">
-        <a href="{{ route('provider.jobs') }}" class="form-hero-back">
-            ← Back to My Jobs
-        </a>
         <h1>{{ isset($job) ? 'Edit Job Posting' : 'Post a New Job' }}</h1>
         <p>Fill in the details below to {{ isset($job) ? 'update' : 'publish' }} your job posting</p>
     </div>

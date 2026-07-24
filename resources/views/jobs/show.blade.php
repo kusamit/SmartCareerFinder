@@ -23,22 +23,7 @@
 
 @section('content')
 <div class="max-w-5xl mx-auto fade-up">
-    {{-- Header Navigation --}}
-    <div class="mb-6">
-        @if(session('user_id') && isset($user) && $user->role === 'seeker')
-            <a href="{{ route('seeker.jobs') }}" class="inline-flex items-center text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 text-sm font-semibold transition-colors no-underline">
-                &larr; Back to Job Matches
-            </a>
-        @elseif(session('user_id') && isset($user) && $user->role === 'provider')
-            <a href="{{ route('provider.jobs') }}" class="inline-flex items-center text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 text-sm font-semibold transition-colors no-underline">
-                &larr; Back to My Jobs
-            </a>
-        @else
-            <a href="{{ url('/') }}" class="inline-flex items-center text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 text-sm font-semibold transition-colors no-underline">
-                &larr; Back to Home
-            </a>
-        @endif
-    </div>
+
 
     {{-- Main Job Header Card --}}
     <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-8 mb-8 shadow-sm transition-all duration-300">

@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', 'My Profile — View')
+@section('title', 'My Profile')
 
 @section('nav_links')
 <a href="{{ route('seeker.dashboard') }}" class="nav-link">Dashboard</a>

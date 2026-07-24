@@ -30,15 +30,15 @@
         background: #ffffff !important;
         border: 1.5px solid #e8edf5 !important;
         border-radius: 24px !important;
-        padding: 44px 40px !important;
+        padding: 44px 44px !important;
         box-shadow: 0 20px 60px rgba(15, 23, 42, 0.07) !important;
         width: 100%;
-        max-width: 480px;
+        max-width: 680px;
     }
 
     .reg-header {
         text-align: center;
-        margin-bottom: 30px;
+        margin-bottom: 28px;
     }
 
     .reg-title {
@@ -59,7 +59,7 @@
     .role-row {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: 12px;
+        gap: 14px;
         margin-bottom: 24px;
     }
 
@@ -98,8 +98,8 @@
     }
 
     .role-btn-title {
-        font-size: 13.5px;
-        font-weight: 700;
+        font-size: 14px;
+        font-weight: 800;
         color: #0f172a;
         display: block;
     }
@@ -108,9 +108,11 @@
         color: #4f46e5;
     }
 
+    /* Black color for subtext as requested */
     .role-btn-sub {
-        font-size: 11px;
-        color: #94a3b8;
+        font-size: 11.5px;
+        font-weight: 700;
+        color: #0f172a !important;
         display: block;
         margin-top: 3px;
     }
@@ -126,9 +128,24 @@
         margin-bottom: 20px;
     }
 
-    /* Form fields */
+    /* Form grid: 2 fields in one row */
+    .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px 20px;
+    }
+
+    @media (max-width: 640px) {
+        .form-grid {
+            grid-template-columns: 1fr;
+        }
+        .register-card {
+            padding: 32px 22px !important;
+        }
+    }
+
     .field {
-        margin-bottom: 16px;
+        margin-bottom: 4px;
     }
 
     .field-label {
@@ -258,29 +275,31 @@
             @csrf
             <input type="hidden" name="role" id="roleInput" value="seeker">
 
-            <div class="field">
-                <label class="field-label" for="name">Full Name</label>
-                <input type="text" id="name" name="name" value="{{ old('name') }}" class="field-input" placeholder="e.g. John Doe" required>
-            </div>
+            <div class="form-grid">
+                <div class="field">
+                    <label class="field-label" for="name">Full Name</label>
+                    <input type="text" id="name" name="name" value="{{ old('name') }}" class="field-input" placeholder="e.g. John Doe" required>
+                </div>
 
-            <div class="field" id="companyField" style="display: none;">
-                <label class="field-label" for="company_name">Company Name</label>
-                <input type="text" id="company_name" name="company_name" value="{{ old('company_name') }}" class="field-input" placeholder="e.g. TechCorp Solutions">
-            </div>
+                <div class="field">
+                    <label class="field-label" for="email">Email Address</label>
+                    <input type="email" id="email" name="email" value="{{ old('email') }}" class="field-input" placeholder="you@example.com" required>
+                </div>
 
-            <div class="field">
-                <label class="field-label" for="email">Email Address</label>
-                <input type="email" id="email" name="email" value="{{ old('email') }}" class="field-input" placeholder="you@example.com" required>
-            </div>
+                <div class="field" id="companyField" style="display: none; grid-column: 1 / -1;">
+                    <label class="field-label" for="company_name">Company Name</label>
+                    <input type="text" id="company_name" name="company_name" value="{{ old('company_name') }}" class="field-input" placeholder="e.g. TechCorp Solutions">
+                </div>
 
-            <div class="field">
-                <label class="field-label" for="password">Password</label>
-                <input type="password" id="password" name="password" class="field-input" placeholder="Minimum 6 characters" required>
-            </div>
+                <div class="field">
+                    <label class="field-label" for="password">Password</label>
+                    <input type="password" id="password" name="password" class="field-input" placeholder="Minimum 6 characters" required>
+                </div>
 
-            <div class="field">
-                <label class="field-label" for="password_confirmation">Confirm Password</label>
-                <input type="password" id="password_confirmation" name="password_confirmation" class="field-input" placeholder="Repeat your password" required>
+                <div class="field">
+                    <label class="field-label" for="password_confirmation">Confirm Password</label>
+                    <input type="password" id="password_confirmation" name="password_confirmation" class="field-input" placeholder="Repeat your password" required>
+                </div>
             </div>
 
             <button type="submit" class="reg-submit">Create Account</button>

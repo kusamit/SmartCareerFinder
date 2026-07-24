@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 @section('title', 'All Applicants')
 
 @section('nav_links')
@@ -14,8 +14,7 @@
 @section('content')
 <div class="fade-up">
 
-    {{-- Back --}}
-    <a href="{{ route('provider.dashboard') }}" class="back-link">← Back to Dashboard</a>
+
 
     {{-- ===== PAGE HEADER ===== --}}
     <div class="page-header">

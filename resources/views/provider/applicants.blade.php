@@ -14,8 +14,7 @@
 @section('content')
 <div class="fade-up">
 
-    {{-- Back --}}
-    <a href="{{ route('provider.jobs') }}" class="back-link">← Back to Jobs</a>
+
 
     {{-- ===== PAGE HEADER ===== --}}
     <div class="page-header">

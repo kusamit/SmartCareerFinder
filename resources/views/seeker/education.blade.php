@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 @section('title', 'Manage Education')
 
 @section('nav_links')
@@ -18,7 +18,6 @@
     {{-- Header --}}
     <div class="edu-header">
         <div class="header-left-group">
-            <a href="{{ route('seeker.profile') }}" class="back-btn">←</a>
             <h1 class="header-title">Education</h1>
         </div>
         <div class="header-actions">
