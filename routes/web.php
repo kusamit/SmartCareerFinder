@@ -23,6 +23,7 @@ Route::middleware('auth.seeker')->prefix('seeker')->name('seeker.')->group(funct
     Route::get('/dashboard', [SeekerController::class, 'dashboard'])->name('dashboard');
     Route::get('/profile', [SeekerController::class, 'profile'])->name('profile');
     Route::get('/profile/view', [SeekerController::class, 'profileView'])->name('profile.view');
+    Route::get('/profile/cv', [SeekerController::class, 'viewCv'])->name('profile.cv');
     Route::post('/profile', [SeekerController::class, 'updateProfile'])->name('profile.update');
     Route::get('/jobs', [SeekerController::class, 'jobs'])->name('jobs');
     Route::post('/jobs/find-by-cv', [SeekerController::class, 'findByCv'])->name('jobs.cv');
@@ -47,4 +48,5 @@ Route::middleware('auth.provider')->prefix('provider')->name('provider.')->group
     Route::get('/jobs/{job}/applicants', [ProviderController::class, 'applicants'])->name('jobs.applicants');
     Route::get('/applicants', [ProviderController::class, 'allApplicants'])->name('all_applicants');
     Route::patch('/applications/{application}/status', [ProviderController::class, 'updateApplicationStatus'])->name('applications.status');
+    Route::get('/applications/{application}/cv', [ProviderController::class, 'viewCv'])->name('applications.cv');
 });

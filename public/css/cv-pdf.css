@@ -1,0 +1,321 @@
+/* CV PDF Stylesheet - Standard A4 Multi-page Format with Executive 2-Column Skills */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background-color: #f8fafc;
+    color: #1e293b;
+    line-height: 1.5;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+}
+
+/* Action Bar - removed */
+
+
+/* Page Container - Standard A4 Sizing */
+.cv-container {
+    width: 210mm;
+    min-height: 297mm;
+    margin: 0 auto;
+    background: #ffffff;
+    padding: 18mm 20mm;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+/* CV Header */
+.cv-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding-bottom: 20px;
+    margin-bottom: 22px;
+    gap: 20px;
+    break-inside: avoid;
+    page-break-inside: avoid;
+}
+
+.cv-header-left {
+    flex: 1;
+}
+
+.cv-name {
+    font-size: 30px;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+}
+
+.cv-role {
+    font-size: 17px;
+    font-weight: 600;
+    color: #334155;
+    margin-top: 4px;
+    margin-bottom: 10px;
+}
+
+.cv-link-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: #2563eb;
+    text-decoration: none;
+    word-break: break-all;
+}
+
+.cv-link-item:hover {
+    text-decoration: underline;
+}
+
+.cv-header-right {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    text-align: right;
+    font-size: 13px;
+    color: #334155;
+}
+
+.cv-contact-item {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    font-weight: 500;
+}
+
+.cv-contact-icon {
+    width: 15px;
+    height: 15px;
+    color: #475569;
+    flex-shrink: 0;
+}
+
+/* Sections */
+.cv-section {
+    margin-bottom: 22px;
+    break-inside: auto;
+    page-break-inside: auto;
+    /* Minimum 3 lines of content must follow the title before a break is allowed */
+    orphans: 3;
+    widows: 3;
+}
+
+.cv-section-title {
+    font-size: 16px;
+    font-weight: 800;
+    color: #0f172a;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding-bottom: 5px;
+    border-bottom: 1.5px solid #cbd5e1;
+    margin-bottom: 12px;
+    /* Prevent title from being the last element on a page — always push to next page with its content */
+    break-after: avoid;
+    page-break-after: avoid;
+    orphans: 4;
+    widows: 4;
+}
+
+.cv-summary-text {
+    font-size: 13.5px;
+    color: #334155;
+    line-height: 1.65;
+    text-align: justify;
+}
+
+/* Timeline Items (Experience & Education) */
+.cv-item {
+    margin-bottom: 16px;
+    break-inside: avoid;
+    page-break-inside: avoid;
+}
+
+.cv-item:last-child {
+    margin-bottom: 0;
+}
+
+.cv-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 4px;
+}
+
+.cv-item-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.cv-item-date {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: #0f172a;
+    white-space: nowrap;
+}
+
+.cv-item-subtitle {
+    font-size: 14px;
+    font-weight: 600;
+    color: #475569;
+    margin-bottom: 6px;
+}
+
+.cv-item-details {
+    font-size: 13.5px;
+    color: #334155;
+    line-height: 1.6;
+}
+
+.cv-item-details ul {
+    list-style-type: disc;
+    padding-left: 18px;
+    margin-top: 4px;
+}
+
+.cv-item-details li {
+    margin-bottom: 4px;
+}
+
+/* 2-Column Skills Section */
+.cv-skills-content {
+    font-size: 13.5px;
+    color: #334155;
+    line-height: 1.65;
+    column-count: 2;
+    column-gap: 32px;
+    -webkit-column-count: 2;
+    -webkit-column-gap: 32px;
+}
+
+.cv-skills-content ul, .cv-skills-content ol {
+    list-style-type: disc;
+    padding-left: 18px;
+    margin: 4px 0 10px 0;
+    break-inside: avoid;
+    -webkit-column-break-inside: avoid;
+    page-break-inside: avoid;
+}
+
+.cv-skills-content li {
+    margin-bottom: 4px;
+    break-inside: avoid;
+    -webkit-column-break-inside: avoid;
+    page-break-inside: avoid;
+}
+
+.cv-skills-content p, .cv-skills-content div {
+    margin-bottom: 8px;
+    break-inside: avoid;
+    -webkit-column-break-inside: avoid;
+    page-break-inside: avoid;
+}
+
+.cv-skills-content h3, .cv-skills-content h4, .cv-skills-content strong, .cv-skills-content b {
+    color: #0f172a;
+    font-weight: 700;
+    break-after: avoid;
+    page-break-after: avoid;
+}
+
+/* Print Overrides for A4 Multi-page output */
+@media print {
+    body {
+        background: #ffffff !important;
+        color: #000000 !important;
+    }
+    
+    .cv-action-bar, .navbar, nav, footer {
+        display: none !important;
+    }
+
+    .cv-container {
+        width: 100% !important;
+        min-height: auto !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        box-shadow: none !important;
+        border: none !important;
+        border-radius: 0 !important;
+    }
+
+    .cv-header {
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+    }
+
+    /* ── KEY FIX: Section title must NEVER be orphaned at bottom of page ── */
+    .cv-section-title {
+        border-bottom-color: #000000 !important;
+        color: #000000 !important;
+        break-after: avoid !important;
+        page-break-after: avoid !important;
+        orphans: 4 !important;
+        widows: 4 !important;
+    }
+
+    /* Each section: allow page breaks but title stays with content */
+    .cv-section {
+        break-inside: auto !important;
+        page-break-inside: auto !important;
+        orphans: 3 !important;
+        widows: 3 !important;
+    }
+
+    /* Each individual item (job entry, education entry): never split */
+    .cv-item {
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+    }
+
+    /* Profile summary block: keep together */
+    .cv-summary-text {
+        orphans: 3 !important;
+        widows: 3 !important;
+    }
+
+    /* Skills 2-column layout: keep sub-groups together */
+    .cv-skills-content {
+        break-inside: auto !important;
+        page-break-inside: auto !important;
+        orphans: 3 !important;
+        widows: 3 !important;
+    }
+
+    .cv-skills-content ul,
+    .cv-skills-content ol,
+    .cv-skills-content p {
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+    }
+
+    /* Skill category headings (strong/bold): must NOT be last on page */
+    .cv-skills-content strong,
+    .cv-skills-content b,
+    .cv-skills-content h3,
+    .cv-skills-content h4 {
+        break-after: avoid !important;
+        page-break-after: avoid !important;
+    }
+
+    .cv-name, .cv-item-title, .cv-item-date {
+        color: #000000 !important;
+    }
+
+    @page {
+        size: A4 portrait;
+        margin: 12mm 15mm;
+    }
+}

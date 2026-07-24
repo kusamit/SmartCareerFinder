@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 @section('title', 'Seeker Dashboard')
 
 @section('nav_links')
@@ -53,7 +53,7 @@
         <div>
             <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
                 <h2 class="section-title" style="margin-bottom:0; font-size: 16px; font-weight: 700; color: #0f172a;">Recent Applications</h2>
-                <a href="{{ route('seeker.applications') }}" style="font-size:13px; color:#6366f1; font-weight:600; text-decoration:none;">View all →</a>
+                <a href="{{ route('seeker.applications') }}" style="font-size:13px; color:#6366f1; font-weight:600; text-decoration:none;">View all</a>
             </div>
 
             @forelse($applications as $app)
@@ -84,13 +84,13 @@
                     <div class="match-pill {{ $matchClass }}">{{ $matchScore }}% match</div>
                     <button class="track-status-btn" data-app-status='@json($statusData)' title="Click to track your application">
                         <span class="badge-status {{ $statusClass }}">{{ $app->status }}</span>
-                        <span class="track-hint">Track &rarr;</span>
+                        <span class="track-hint">Track</span>
                     </button>
                 </div>
             </div>
             @empty
             <div class="empty-state">
-                <p style="margin-bottom: 0;">No applications yet. <a href="{{ route('seeker.jobs') }}" style="color:#6366f1; text-decoration:none; font-weight:600;">Find jobs →</a></p>
+                <p style="margin-bottom: 0;">No applications yet. <a href="{{ route('seeker.jobs') }}" style="color:#6366f1; text-decoration:none; font-weight:600;">Find jobs</a></p>
             </div>
             @endforelse
         </div>
@@ -148,7 +148,6 @@
                             </span>
                             <span style="display:flex; align-items:center; gap:5px;">
                                 <span>{{ $count }} ({{ $pct }}%)</span>
-                                @if($count > 0)<span style="font-size:10px; color:#6366f1;">&rarr;</span>@endif
                             </span>
                         </div>
                         <div class="progress-bar-container" style="height: 6px; margin-top: 0; background-color: #f1f5f9;">
@@ -178,7 +177,7 @@
             <div class="profile-alert">
                 <div class="profile-alert-title">Complete your profile</div>
                 <div class="profile-alert-desc">Add your skills and experience to get more accurate AI matches.</div>
-                <a href="{{ route('seeker.profile') }}" class="profile-alert-link">Update now →</a>
+                <a href="{{ route('seeker.profile') }}" class="profile-alert-link">Update now</a>
             </div>
             @endif
         </div>

@@ -47,7 +47,7 @@
     @if(session('cv_mode'))
     <div class="banner-alert">
         <span class="banner-alert-text">Showing results matched to your uploaded CV</span>
-        <a href="{{ route('seeker.jobs') }}" class="banner-alert-link">Reset Filters →</a>
+        <a href="{{ route('seeker.jobs') }}" class="banner-alert-link">Reset Filters</a>
     </div>
     @endif
 
@@ -172,7 +172,7 @@
                style="display:inline-flex; align-items:center; gap:5px; padding:5px 14px; background:#dcfce7; color:#15803d; font-weight:700; font-size:12px; border-radius:8px; border:1px solid #bbf7d0; text-decoration:none; transition:all 0.2s;"
                onmouseover="this.style.background='#16a34a'; this.style.color='#fff'; this.style.borderColor='#16a34a';"
                onmouseout="this.style.background='#dcfce7'; this.style.color='#15803d'; this.style.borderColor='#bbf7d0';">
-               View Full Details &rarr;
+               View Full Details
             </a>
         </div>
     </div>

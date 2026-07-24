@@ -173,9 +173,40 @@ class SeekerController extends Controller
 
         // Fetch matches from Python FAISS index
         $scriptPath = escapeshellarg(base_path('python/match.py'));
-        $cmd = "python {$scriptPath} --search-jobs --id " . escapeshellarg($user->id);
-        $output = shell_exec($cmd);
-        $scores = json_decode($output, true) ?? [];
+        $cmd        = "python {$scriptPath} --search-jobs --id " . escapeshellarg($user->id);
+        $output     = shell_exec($cmd);
+        $scores     = json_decode($output, true) ?? [];
+
+        // ── Auto-sync: if user vector is missing from the index, embed & rebuild ──
+        // This is the root cause of the "0% on Find Jobs / 16% after applying" bug:
+        // The apply() path triggers a fallback embed+rebuild, but jobs() did not.
+        if (empty($scores)) {
+            $userText    = strip_tags(
+                $user->profile_summary . ' ' . $user->skills . ' ' . $user->preferred_role
+                . ' ' . $user->location . ' ' . $user->education . ' ' . $user->portfolio
+            );
+            $escapedText = escapeshellarg($userText);
+            $escapedId   = escapeshellarg($user->id);
+
+            // Embed all active jobs that aren't already indexed
+            foreach ($jobs as $j) {
+                $jobText    = strip_tags($j->title . ' ' . $j->key_skills . ' ' . $j->description . ' ' . $j->requirements . ' ' . $j->location . ' ' . $j->experience_required);
+                $escapedJt  = escapeshellarg($jobText);
+                $escapedJid = escapeshellarg($j->id);
+                shell_exec("python {$scriptPath} --embed-job --id {$escapedJid} --text {$escapedJt}");
+            }
+
+            // Embed the user
+            shell_exec("python {$scriptPath} --embed-user --id {$escapedId} --text {$escapedText}");
+
+            // Rebuild the FAISS index
+            shell_exec("python {$scriptPath} --index");
+
+            // Retry the search
+            $output = shell_exec($cmd);
+            $scores = json_decode($output, true) ?? [];
+        }
+        // ──────────────────────────────────────────────────────────────────────────
 
         $scoreMap = [];
         foreach ($scores as $s) {
@@ -432,5 +463,13 @@ class SeekerController extends Controller
                 \App\Models\Application::where('id', $app->id)->update(['match_score' => $liveScore]);
             }
         }
+    }
+
+    public function viewCv()
+    {
+        $seeker = $this->authUser();
+        $seeker->load('educations');
+        $cvSummary = $seeker->generateCvSummary();
+        return view('provider.cv-pdf', compact('seeker', 'cvSummary'));
     }
 }

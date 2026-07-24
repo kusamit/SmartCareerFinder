@@ -153,7 +153,7 @@
         {{-- Right Side info (Key Skills, metadata) --}}
         <div class="space-y-8">
             {{-- Key Skills --}}
-            <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 shadow-sm">
+            <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 shadow-sm" style="display: none;">
                 <h3 class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-4">Key Skills</h3>
                 @if($job->key_skills)
                     <div class="flex flex-wrap gap-2">
@@ -174,14 +174,29 @@
                     <span>Posted</span>
                     <span class="text-slate-800 dark:text-slate-300 font-semibold">{{ $job->created_at->format('M d, Y') }}</span>
                 </div>
+                @php
+                    $appRecord = null;
+                    if (session('user_id')) {
+                        $currentUser = \App\Models\User::find(session('user_id'));
+                        if ($currentUser && $currentUser->role === 'seeker') {
+                            $appRecord = \App\Models\Application::where('job_id', $job->id)
+                                ->where('user_id', $currentUser->id)
+                                ->first();
+                        }
+                    }
+                @endphp
+                @if($appRecord)
+                <div class="flex justify-between py-1 border-b border-slate-55 dark:border-slate-800">
+                    <span>Applied date</span>
+                    <span class="text-slate-800 dark:text-slate-300 font-semibold">{{ $appRecord->created_at->format('M d, Y') }}</span>
+                </div>
+                @else
                 <div class="flex justify-between py-1 border-b border-slate-55 dark:border-slate-800">
                     <span>Last updated</span>
                     <span class="text-slate-800 dark:text-slate-300 font-semibold">{{ $job->updated_at->diffForHumans() }}</span>
                 </div>
-                <div class="flex justify-between py-1">
-                    <span>Job ID</span>
-                    <span class="text-slate-800 dark:text-slate-300 font-semibold">#{{ $job->id }}</span>
-                </div>
+                @endif
+
             </div>
         </div>
     </div>

@@ -48,7 +48,6 @@
                 <input type="email" name="email"
                        value="{{ old('email') }}"
                        class="input"
-                       placeholder="you@example.com"
                        required>
             </div>
 
@@ -56,7 +55,6 @@
                 <label class="label">Password</label>
                 <input type="password" name="password"
                        class="input"
-                       placeholder="••••••••"
                        required>
             </div>
 

@@ -50,6 +50,12 @@ class User extends Model
         return \App\Services\ProfileSummaryGenerator::generate($this);
     }
 
+    // Generate executive summary specifically for CV output
+    public function generateCvSummary(): string
+    {
+        return \App\Services\CvSummaryGenerator::generate($this);
+    }
+
     public function experienceYearsVal(): int
     {
         $raw = $this->experience_years ?? '';
@@ -268,31 +274,66 @@ class User extends Model
     /**
      * Compute composite score:
      *   FAISS (70%) + Location (10 pts) + Portfolio/Projects (10 pts) + Job Domain (10 pts) = 100
+     *
+     * Rules:
+     *   - If the seeker has no meaningful profile data → 0% (no bonuses applied)
+     *   - Bonuses (location / portfolio / domain) only apply when base score > 0
      */
     public function compositeScore(Job $job, int $faissScore): array
     {
+        // ── Profile completeness guard ────────────────────────────────────────
+        // A match score requires actual profile content.
+        // If the user has filled in none of the core fields, return 0 immediately.
+        $hasSkills     = !empty(trim(strip_tags($this->skills           ?? '')));
+        $hasRole       = !empty(trim(strip_tags($this->preferred_role   ?? '')));
+        $hasExperience = !empty(trim(strip_tags($this->experience_years ?? '')));
+        $hasEducation  = !empty(trim(strip_tags($this->education        ?? '')));
+
+        $emptyProfile = !$hasSkills && !$hasRole && !$hasExperience && !$hasEducation;
+
+        if ($emptyProfile) {
+            return [
+                'faiss_score'         => 0,
+                'faiss_weighted'      => 0,
+                'faiss_max'           => 70,
+                'location_match'      => false,
+                'location_pts'        => 0,
+                'location_max'        => 10,
+                'portfolio_match'     => false,
+                'portfolio_pts'       => 0,
+                'portfolio_max'       => 10,
+                'domain_match'        => false,
+                'domain_matched_role' => null,
+                'domain_pts'          => 0,
+                'domain_max'          => 10,
+                'final_score'         => 0,
+            ];
+        }
+        // ─────────────────────────────────────────────────────────────────────
+
+        // ── Skill-based fallback when FAISS returns 0 ─────────────────────────
         if ($faissScore <= 0) {
             $seekerSkills = $this->skillsArray();
-            $jobSkills = $job->skillsArray();
-            
+            $jobSkills    = $job->skillsArray();
+
             $matchTerm = function ($term, $text) {
                 $escaped = preg_quote($term, '/');
-                $pattern = '/(?:^|[\s,.;:()\/\\-\\[\\]{}*])' . $escaped . '(?:$|[\s,.;:()\/\\-\\[\\]{}*])/i';
+                $pattern = '/(?:^|[\s,.;:()\\/\\-\\[\\]{}*])' . $escaped . '(?:$|[\s,.;:()\\/\\-\\[\\]{}*])/i';
                 return (bool) preg_match($pattern, $text);
             };
-            
+
             $matchedCount = 0;
             foreach ($jobSkills as $js) {
                 foreach ($seekerSkills as $ss) {
                     $stdJs = mb_strtolower(trim($js));
                     $stdSs = mb_strtolower(trim($ss));
-                    if ($stdJs === "apis") $stdJs = "api";
-                    if ($stdSs === "apis") $stdSs = "api";
-                    if (in_array($stdJs, ["github", "gitlab"])) $stdJs = "git";
-                    if (in_array($stdSs, ["github", "gitlab"])) $stdSs = "git";
-                    
-                    if ($stdJs === $stdSs 
-                        || $matchTerm($stdJs, $ss) 
+                    if ($stdJs === 'apis') $stdJs = 'api';
+                    if ($stdSs === 'apis') $stdSs = 'api';
+                    if (in_array($stdJs, ['github', 'gitlab'])) $stdJs = 'git';
+                    if (in_array($stdSs, ['github', 'gitlab'])) $stdSs = 'git';
+
+                    if ($stdJs === $stdSs
+                        || $matchTerm($stdJs, $ss)
                         || $matchTerm($stdSs, $js)) {
                         $matchedCount++;
                         break;
@@ -303,36 +344,47 @@ class User extends Model
                 $faissScore = (int) round(30 + 40 * ($matchedCount / count($jobSkills)));
             }
         }
+        // ─────────────────────────────────────────────────────────────────────
 
-        $faissWeighted  = (int) round($faissScore * 0.70);
+        $faissWeighted = (int) round($faissScore * 0.70);
 
-        $locationMatch  = $this->checkLocationMatch($job);
-        $locationPts    = $locationMatch ? 10 : 0;
+        // ── Bonuses only apply when there is actual content-based score ───────
+        // Prevents location/domain bonuses from inflating a zero-content match.
+        if ($faissScore > 0) {
+            $locationMatch  = $this->checkLocationMatch($job);
+            $locationPts    = $locationMatch ? 10 : 0;
 
-        $portfolioMatch = $this->hasPortfolio();
-        $portfolioPts   = $portfolioMatch ? 10 : 0;
+            $portfolioMatch = $this->hasPortfolio();
+            $portfolioPts   = $portfolioMatch ? 10 : 0;
 
-        $domainResult   = $this->checkDomainMatch($job);
-        $domainMatch    = $domainResult['matched'];
-        $domainPts      = $domainMatch ? 10 : 0;
+            $domainResult   = $this->checkDomainMatch($job);
+            $domainMatch    = $domainResult['matched'];
+            $domainPts      = $domainMatch ? 10 : 0;
+        } else {
+            $locationMatch  = false;  $locationPts  = 0;
+            $portfolioMatch = false;  $portfolioPts = 0;
+            $domainResult   = ['matched' => false, 'matched_role' => null, 'matched_keyword' => null];
+            $domainMatch    = false;  $domainPts    = 0;
+        }
+        // ─────────────────────────────────────────────────────────────────────
 
-        $finalScore     = min(100, $faissWeighted + $locationPts + $portfolioPts + $domainPts);
+        $finalScore = min(100, $faissWeighted + $locationPts + $portfolioPts + $domainPts);
 
         return [
-            'faiss_score'     => $faissScore,
-            'faiss_weighted'  => $faissWeighted,
-            'faiss_max'       => 70,
-            'location_match'  => $locationMatch,
-            'location_pts'    => $locationPts,
-            'location_max'    => 10,
-            'portfolio_match' => $portfolioMatch,
-            'portfolio_pts'   => $portfolioPts,
-            'portfolio_max'   => 10,
-            'domain_match'    => $domainMatch,
+            'faiss_score'         => $faissScore,
+            'faiss_weighted'      => $faissWeighted,
+            'faiss_max'           => 70,
+            'location_match'      => $locationMatch,
+            'location_pts'        => $locationPts,
+            'location_max'        => 10,
+            'portfolio_match'     => $portfolioMatch,
+            'portfolio_pts'       => $portfolioPts,
+            'portfolio_max'       => 10,
+            'domain_match'        => $domainMatch,
             'domain_matched_role' => $domainResult['matched_role'],
-            'domain_pts'      => $domainPts,
-            'domain_max'      => 10,
-            'final_score'     => $finalScore,
+            'domain_pts'          => $domainPts,
+            'domain_max'          => 10,
+            'final_score'         => $finalScore,
         ];
     }
 

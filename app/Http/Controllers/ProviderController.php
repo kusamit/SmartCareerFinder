@@ -256,5 +256,22 @@ class ProviderController extends Controller
 
         return back()->with('success', "Application status updated to " . ucfirst($request->status) . ".");
     }
+
+    public function viewCv(Application $application)
+    {
+        $user = $this->authUser();
+        abort_if($application->job->user_id !== $user->id, 403);
+
+        $seeker = $application->seeker;
+        if (!$seeker) {
+            abort(404, 'Candidate profile not found.');
+        }
+
+        $seeker->load('educations');
+
+        $cvSummary = $seeker->generateCvSummary();
+
+        return view('provider.cv-pdf', compact('user', 'seeker', 'application', 'cvSummary'));
+    }
 }
 

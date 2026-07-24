@@ -29,6 +29,27 @@ class JobController extends Controller
                 $output     = shell_exec($cmd);
                 $results    = json_decode($output, true) ?? [];
 
+                // ── Auto-sync fallback: user vector missing from FAISS index ──────────
+                if (empty($results)) {
+                    $userText    = strip_tags(
+                        $user->profile_summary . ' ' . $user->skills . ' ' . $user->preferred_role
+                        . ' ' . $user->location . ' ' . $user->education . ' ' . $user->portfolio
+                    );
+                    $escapedText = escapeshellarg($userText);
+                    $escapedUid  = escapeshellarg($user->id);
+                    $jobText     = strip_tags($job->title . ' ' . $job->key_skills . ' ' . $job->description . ' ' . $job->requirements . ' ' . $job->location . ' ' . $job->experience_required);
+                    $escapedJt   = escapeshellarg($jobText);
+                    $escapedJid  = escapeshellarg($job->id);
+
+                    shell_exec("python {$scriptPath} --embed-job  --id {$escapedJid} --text {$escapedJt}");
+                    shell_exec("python {$scriptPath} --embed-user --id {$escapedUid} --text {$escapedText}");
+                    shell_exec("python {$scriptPath} --index");
+
+                    $output  = shell_exec($cmd);
+                    $results = json_decode($output, true) ?? [];
+                }
+                // ──────────────────────────────────────────────────────────────────────
+
                 $faissScore = 0;
                 foreach ($results as $r) {
                     if ($r['job_id'] == $job->id) {

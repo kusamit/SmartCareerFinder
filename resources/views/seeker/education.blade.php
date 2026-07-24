@@ -21,7 +21,6 @@
             <h1 class="header-title">Education</h1>
         </div>
         <div class="header-actions">
-            <button class="header-action-btn" title="Reorder">⇳</button>
             <button class="header-action-btn plus-btn" onclick="openAddModal()">+</button>
         </div>
     </div>

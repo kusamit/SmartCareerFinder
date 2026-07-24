@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 @section('title', 'My Applications')
 
 @section('nav_links')
@@ -130,7 +130,7 @@
         <div class="status-col">
             <button class="track-status-btn" data-app-status='@json($statusData)' title="Click to track your application status">
                 <span class="badge-status {{ $statusClass }}">{{ $app->status }}</span>
-                <span class="track-hint">Track &rarr;</span>
+                <span class="track-hint">Track</span>
             </button>
             @if(!$app->job->isOpen())
                 <span class="job-closed-tag">Closed</span>
@@ -143,7 +143,7 @@
                style="display:inline-flex; align-items:center; gap:5px; padding:5px 14px; background:#dcfce7; color:#15803d; font-weight:700; font-size:12px; border-radius:8px; border:1px solid #bbf7d0; text-decoration:none; transition:all 0.2s;"
                onmouseover="this.style.background='#16a34a'; this.style.color='#fff'; this.style.borderColor='#16a34a';"
                onmouseout="this.style.background='#dcfce7'; this.style.color='#15803d'; this.style.borderColor='#bbf7d0';">
-               View Full Details &rarr;
+               View Full Details
             </a>
         </div>
     </div>

@@ -146,7 +146,14 @@
 
         {{-- Info --}}
         <div class="applicant-info">
-            <div class="applicant-name">{{ $app->seeker->name }}</div>
+            <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                <div class="applicant-name">{{ $app->seeker->name }}</div>
+                <a href="{{ route('provider.applications.cv', $app->id) }}" target="_blank"
+                   style="display:inline-flex; align-items:center; padding:5px 14px; background:#2563eb; color:#fff; font-size:13px; font-weight:700; border-radius:8px; text-decoration:none; box-shadow:0 2px 8px rgba(37,99,235,0.3); transition:background 0.2s; letter-spacing:0.03em; white-space:nowrap;"
+                   onmouseover="this.style.background='#1d4ed8';" onmouseout="this.style.background='#2563eb';">
+                    CV
+                </a>
+            </div>
             <div class="applicant-email">{{ $app->seeker->email }}</div>
             @if($app->seeker->location)
             <div class="applicant-location">{{ $app->seeker->location }}</div>

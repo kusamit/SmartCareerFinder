@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 @section('title', 'Provider Dashboard')
 
 @section('nav_links')
@@ -47,7 +47,7 @@
     {{-- ===== RECENT JOBS ===== --}}
     <div class="section-header">
         <div class="section-title">Recent Job Postings</div>
-        <a href="{{ route('provider.jobs') }}" style="font-size:13px; color:#6366f1; font-weight:600; text-decoration:none;">View all →</a>
+        <a href="{{ route('provider.jobs') }}" style="font-size:13px; color:#6366f1; font-weight:600; text-decoration:none;">View all</a>
     </div>
 
     @forelse($jobs as $job)

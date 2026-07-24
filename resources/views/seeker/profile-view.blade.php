@@ -61,7 +61,7 @@
     <div class="pv-hint">
         <div class="pv-hint-text">
             A complete profile earns up to <strong>100% match scores</strong> on relevant jobs.
-            Your <strong>skills</strong>, <strong>experience</strong>, <strong>preferred role</strong>,
+            <strong>Skills</strong>, <strong>experience</strong>, <strong>preferred role</strong>,
             <strong>location</strong> and <strong>portfolio</strong> all contribute to matching accuracy.
         </div>
     </div>
@@ -114,7 +114,7 @@
     <div class="pv-card">
         <div class="pv-card-header">
             <div class="pv-card-title">Education History</div>
-            <a href="{{ route('seeker.education') }}" style="margin-left:auto;font-size:12px;font-weight:700;color:#6366f1;text-decoration:none;">Manage &#8594;</a>
+            <a href="{{ route('seeker.education') }}" style="margin-left:auto;font-size:12px;font-weight:700;color:#6366f1;text-decoration:none;">Manage</a>
         </div>
         <div class="pv-card-body">
             @if($user->educations->isNotEmpty())
@@ -208,26 +208,21 @@
         </div>
     </div>
 
-    {{-- CV --}}
-    @if($user->cv_path)
+    {{-- GENERATED CV --}}
     <div class="pv-card">
         <div class="pv-card-header">
-            <div class="pv-card-title">Uploaded CV / R&eacute;sum&eacute;</div>
+            <div class="pv-card-title">Curriculum Vitae</div>
         </div>
         <div class="pv-card-body" style="padding:20px 28px;">
-            <div style="display:flex;align-items:center;gap:14px;">
-                <div>
-                    <div style="font-weight:700;color:#0f172a;font-size:14px;margin-bottom:3px;">CV on file</div>
-                    <a href="{{ asset('storage/' . $user->cv_path) }}" target="_blank" style="color:#6366f1;font-size:13px;font-weight:700;text-decoration:none;">View / Download &#8599;</a>
-                    <div style="font-size:12px;color:#94a3b8;margin-top:2px;">Used for CV-based job matching</div>
-                </div>
-            </div>
+            <a href="{{ route('seeker.profile.cv') }}" target="_blank" style="display:inline-flex;align-items:center;padding:10px 28px;background:#6366f1;color:#fff;font-size:14px;font-weight:700;border-radius:10px;text-decoration:none;box-shadow:0 3px 10px rgba(99,102,241,0.35);transition:background 0.2s;" onmouseover="this.style.background='#4f46e5';" onmouseout="this.style.background='#6366f1';">
+                CV
+            </a>
         </div>
     </div>
-    @endif
+
 
     {{-- PROFILE STRENGTH --}}
-    <div class="pv-card">
+    <div class="pv-card" style="display: none;">
         <div class="pv-card-header">
             <div class="pv-card-title">Profile Strength Breakdown</div>
             <div style="margin-left:auto;font-size:13px;font-weight:800;color:{{ $pct >= 70 ? '#059669' : ($pct >= 40 ? '#d97706' : '#dc2626') }};">{{ $pct }}% Complete</div>
@@ -264,9 +259,10 @@
     <div style="text-align:center;padding:8px 0 20px;display:flex;justify-content:center;gap:12px;flex-wrap:wrap;">
         <a href="{{ route('seeker.profile') }}" class="btn-edit" style="font-size:14px;padding:13px 32px;">Edit My Profile</a>
         <a href="{{ route('seeker.jobs') }}"
-           style="display:inline-flex;align-items:center;gap:7px;padding:13px 28px;background:#f1f5f9;color:#475569;font-size:14px;font-weight:700;border-radius:14px;text-decoration:none;transition:all 0.2s;"
-           onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">
-            Find Jobs &#8594;
+           style="display:inline-flex;align-items:center;gap:7px;padding:12px 28px;background:transparent;color:#6366f1;border:2px solid #6366f1;font-size:14px;font-weight:700;border-radius:14px;text-decoration:none;transition:all 0.2s;box-sizing:border-box;"
+           onmouseover="this.style.background='#6366f1'; this.style.color='#fff';"
+           onmouseout="this.style.background='transparent'; this.style.color='#6366f1';">
+            Find Jobs
         </a>
     </div>
 
