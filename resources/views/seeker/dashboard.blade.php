@@ -18,7 +18,6 @@
     {{-- ===== HEADER ===== --}}
     <div class="page-header">
         <div class="header-left">
-            <div class="seeker-avatar">{{ strtoupper(substr($user->name, 0, 2)) }}</div>
             <div>
                 <div class="page-title">Hello, {{ $user->name }}</div>
                 <div class="page-sub">Find jobs that match your skills</div>
@@ -74,14 +73,50 @@
                     'job_title' => $app->job->title,
                     'company'   => $app->job->company,
                 ];
+
+                $details = $user->matchDetails($app->job, $matchScore);
+                $finalComp = $details['composite'] ?? null;
+                $matchDataArr = [
+                    'name'             => $user->name,
+                    'job_title'        => $app->job->title,
+                    'score'            => $matchScore,
+                    'matched_skills'   => array_values($details['matched_skills']),
+                    'unmatched_skills' => array_values($details['unmatched_skills']),
+                    'location_match'   => $details['location_match'],
+                    'role_match'       => $details['role_match'],
+                    'role_matched_role'=> $details['role_matched_role'] ?? null,
+                    'seeker_roles'     => $details['seeker_roles'] ?? [],
+                    'seeker_location'  => $details['seeker_location'],
+                    'job_location'     => $details['job_location'],
+                    'seeker_role'      => $details['seeker_role'],
+                    'exp_match'        => $details['exp_match'],
+                    'exp_message'      => $details['exp_message'],
+                    'portfolio_match'  => $details['portfolio_match'],
+                    'composite'        => $finalComp,
+                ];
+
+                $recs = [];
+                $recText = '';
+                if (!empty($details['unmatched_skills'])) {
+                    $recs = \App\Services\Recommendation::categorizeSkills($details['unmatched_skills']);
+                    $recCategories = array_column($recs, 'category');
+                    $recText = implode(' & ', array_slice($recCategories, 0, 2));
+                }
             @endphp
             <div class="app-row">
-                <div>
-                    <a href="{{ route('jobs.show', $app->job->id) }}" class="app-row-title">{{ $app->job->title }}</a>
+                <div style="flex: 1; min-width: 0;">
+                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 2px;">
+                        <a href="{{ route('jobs.show', $app->job->id) }}" class="app-row-title" style="margin-bottom: 0;">{{ $app->job->title }}</a>
+                        @if(!empty($recs))
+                            <span class="recommendation-pill hover-popover" data-recs="{{ json_encode($recs) }}" style="display:inline-flex; align-items:center; gap:4px; font-size:10px; font-weight:700; color:#16a34a; background:none; border:none; padding:2px 4px; cursor:pointer;" title="Hover or click to view skill recommendations">
+                                Recommendation
+                            </span>
+                        @endif
+                    </div>
                     <div class="app-row-meta">{{ $app->job->company }} &nbsp;·&nbsp; {{ $app->job->location }} &nbsp;·&nbsp; Applied {{ $app->created_at->diffForHumans() }}</div>
                 </div>
                 <div style="display:flex; align-items:center; gap:12px;">
-                    <div class="match-pill {{ $matchClass }}">{{ $matchScore }}% match</div>
+                    <div class="match-pill {{ $matchClass }} cursor-pointer" data-match="{{ json_encode($matchDataArr) }}" title="Click to view match details" style="cursor: pointer;">{{ $matchScore }}% match</div>
                     <button class="track-status-btn" data-app-status='@json($statusData)' title="Click to track your application">
                         <span class="badge-status {{ $statusClass }}">{{ $app->status }}</span>
                         <span class="track-hint">Track</span>

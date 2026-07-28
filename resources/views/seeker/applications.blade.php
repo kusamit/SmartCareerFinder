@@ -72,7 +72,7 @@
             'applied'     => 'status-applied',
             'reviewed'    => 'status-reviewed',
             'shortlisted' => 'status-shortlisted',
-            'rejected'    => 'status-rejected'
+            'rejected'     => 'status-rejected'
         ];
         $statusClass = $statusMap[$app->status] ?? 'bg-slate-100 text-slate-700';
         $live        = $liveScores[$app->id] ?? null;
@@ -104,17 +104,32 @@
             'job_title' => $app->job->title,
             'company'   => $app->job->company,
         ];
+
+        $recs = [];
+        $recText = '';
+        if (!empty($details['unmatched_skills'])) {
+            $recs = \App\Services\Recommendation::categorizeSkills($details['unmatched_skills']);
+            $recCategories = array_column($recs, 'category');
+            $recText = implode(' & ', array_slice($recCategories, 0, 2));
+        }
     @endphp
     <div class="app-card" style="flex-wrap:wrap;">
         {{-- Info --}}
-        <div class="app-info">
-            <a href="{{ route('jobs.show', $app->job->id) }}" class="job-link">{{ $app->job->title }}</a>
+        <div class="app-info" style="flex: 1; min-width: 0;">
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 2px;">
+                <a href="{{ route('jobs.show', $app->job->id) }}" class="job-link" style="margin-bottom: 0;">{{ $app->job->title }}</a>
+                @if(!empty($recs))
+                    <span class="recommendation-pill hover-popover" data-recs="{{ json_encode($recs) }}" style="display:inline-flex; align-items:center; gap:4px; font-size:10px; font-weight:700; color:#16a34a; background:none; border:none; padding:2px 4px; cursor:pointer;" title="Hover or click to view skill recommendations">
+                        Recommendation
+                    </span>
+                @endif
+            </div>
             <div class="company-meta">{{ $app->job->company }} &nbsp;&middot;&nbsp; {{ $app->job->location }}</div>
             <div class="applied-date">Applied {{ $app->created_at->diffForHumans() }}</div>
         </div>
 
         {{-- Score (Clickable) --}}
-        <div class="score-col {{ $scoreClass }}" data-match='@json($matchDataArr)' title="Click to view match details">
+        <div class="score-col {{ $scoreClass }}" data-match="{{ json_encode($matchDataArr) }}" title="Click to view match details">
             <div class="score-sub-lbl">Match / Unmatched</div>
             <div style="display:flex; align-items:baseline; justify-content:center; gap:3px;">
                 <span class="score-val">{{ $score }}%</span>

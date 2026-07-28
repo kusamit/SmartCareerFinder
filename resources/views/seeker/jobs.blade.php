@@ -143,7 +143,7 @@
             {{-- RIGHT: Match Score & Action --}}
             <div class="card-side {{ $scoreClass }}">
                 {{-- Clickable score zone --}}
-                <div class="score-click-zone" data-match='@json($matchDataArr)' title="Click to see match breakdown">
+                <div class="score-click-zone" data-match="{{ json_encode($matchDataArr) }}" title="Click to see match breakdown">
                     <div style="display:flex; align-items:baseline; gap:4px; flex-wrap:wrap; justify-content:center;">
                         <span class="match-score-num">{{ $score }}%</span>
                         <span class="match-unmatch-pct">/ {{ 100 - $score }}%</span>

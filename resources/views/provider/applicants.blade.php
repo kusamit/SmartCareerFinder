@@ -174,7 +174,7 @@
         </div>
 
         {{-- Match Score (Clickable) --}}
-        <div class="match-wrapper {{ $scoreClass }}" data-match='@json($matchDataArr)' title="Click to view match details">
+        <div class="match-wrapper {{ $scoreClass }}" data-match="{{ json_encode($matchDataArr) }}" title="Click to view match details">
             <div class="match-score-val" style="display: flex; align-items: baseline; justify-content: center; gap: 2px;">
                 <span>{{ $score }}%</span>
                 <span style="font-size: 11px; font-weight: 700; color: #e11d48;">/ {{ 100 - $score }}%</span>

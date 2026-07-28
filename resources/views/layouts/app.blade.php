@@ -321,6 +321,16 @@
             </div>
         </div>
 
+        {{-- ===== Recommendations Section ===== --}}
+        <div class="mt-6 pt-5 border-t border-slate-100 dark:border-slate-800" id="modalRecommendationsSection">
+            <div class="text-[11px] font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 border-b border-indigo-100 dark:border-indigo-900/40 pb-1 mb-3">
+                Recommended Course Domains & Skills
+            </div>
+            <div id="modalRecommendations" class="space-y-3">
+                {{-- Recommended courses will be injected here --}}
+            </div>
+        </div>
+
     </div>
 </div>
 
@@ -588,6 +598,28 @@
       if (!unmatchedRows) unmatchedRows = `<span style="font-size:11px;color:#94a3b8;font-style:italic;">No gaps found</span>`;
       document.getElementById('modalUnmatchedRows').innerHTML = unmatchedRows;
 
+      // ── Recommendations ───────────────────────────────────────────────────
+      const recsSec = document.getElementById('modalRecommendationsSection');
+      const recsCont = document.getElementById('modalRecommendations');
+      if (data.unmatched_skills && data.unmatched_skills.length) {
+          recsSec.style.display = 'block';
+          const recs = getRecommendationsJS(data.unmatched_skills);
+          let html = '';
+          recs.forEach(r => {
+              const skillsList = r.skills.map(s => `<span style="display:inline-flex;padding:3px 10px;border-radius:8px;font-size:11px;font-weight:600;background:#eeebff;color:#4f46e5;border:1px solid #d5cdff;">${s}</span>`).join(' ');
+              html += `
+                  <div style="padding: 10px; border-radius: 12px; background: #f8fafc; border: 1px solid #f1f5f9; margin-bottom: 8px;">
+                      <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #94a3b8; letter-spacing: 0.05em; margin-bottom: 4px;">${r.category}</div>
+                      <div style="font-size: 13px; font-weight: 700; color: #0f172a; margin-bottom: 8px;">${r.course}</div>
+                      <div style="display: flex; flex-wrap: wrap; gap: 6px;">${skillsList}</div>
+                  </div>
+              `;
+          });
+          recsCont.innerHTML = html;
+      } else {
+          recsSec.style.display = 'none';
+      }
+
       // Show modal
       modal.classList.remove('opacity-0', 'pointer-events-none');
       container.classList.remove('translate-y-4', 'scale-95');
@@ -669,7 +701,310 @@
       document.getElementById('appStatusModal').classList.remove('open');
   }
 
-  // Close on outside click; intercept [data-match] and [data-app-status] elements
+  // ─── Popover Hover/Click recommendations helper functions ────────────────
+  const skillToCategory = {
+      // Frontend
+      'html5': 'Frontend Development',
+      'css3': 'Frontend Development',
+      'html': 'Frontend Development',
+      'css': 'Frontend Development',
+      'javascript': 'Frontend Development',
+      'javascript (es6+)': 'Frontend Development',
+      'es6': 'Frontend Development',
+      'react.js': 'Frontend Development',
+      'react': 'Frontend Development',
+      'vue': 'Frontend Development',
+      'vue.js': 'Frontend Development',
+      'angular': 'Frontend Development',
+      'tailwind': 'Frontend Development',
+      'tailwind css': 'Frontend Development',
+      'bootstrap': 'Frontend Development',
+      'typescript': 'Frontend Development',
+      'basic typescript': 'Frontend Development',
+      'nextjs': 'Frontend Development',
+      'next.js': 'Frontend Development',
+      'basic next.js': 'Frontend Development',
+      'sass': 'Frontend Development',
+      'jquery': 'Frontend Development',
+      'redux': 'Frontend Development',
+      'redux toolkit': 'Frontend Development',
+      'redux toolkit / zustand': 'Frontend Development',
+      'zustand': 'Frontend Development',
+      'material ui': 'Frontend Development',
+      'material ui / shadcn ui': 'Frontend Development',
+      'shadcn ui': 'Frontend Development',
+      'react query': 'Frontend Development',
+      'react query / tanstack query': 'Frontend Development',
+      'tanstack query': 'Frontend Development',
+      'webpack': 'Frontend Development',
+      'vite': 'Frontend Development',
+      'webpack / vite': 'Frontend Development',
+
+      // Backend
+      'php': 'Backend Development',
+      'laravel': 'Backend Development',
+      'python': 'Backend Development',
+      'django': 'Backend Development',
+      'flask': 'Backend Development',
+      'node': 'Backend Development',
+      'node.js': 'Backend Development',
+      'java': 'Backend Development',
+      'spring': 'Backend Development',
+      'spring boot': 'Backend Development',
+      'c#': 'Backend Development',
+      'c++': 'Backend Development',
+      'ruby': 'Backend Development',
+      'rails': 'Backend Development',
+      'ruby on rails': 'Backend Development',
+      'rest': 'Backend Development',
+      'api': 'Backend Development',
+      'apis': 'Backend Development',
+      'rest api': 'Backend Development',
+      'rest apis': 'Backend Development',
+      'graphql': 'Backend Development',
+      'sql': 'Backend Development',
+      'mysql': 'Backend Development',
+      'postgresql': 'Backend Development',
+      'mongodb': 'Backend Development',
+      'nosql': 'Backend Development',
+
+      // DevOps & Cloud
+      'docker': 'DevOps & Infrastructure',
+      'kubernetes': 'DevOps & Infrastructure',
+      'aws': 'DevOps & Infrastructure',
+      'gcp': 'DevOps & Infrastructure',
+      'azure': 'DevOps & Infrastructure',
+      'cloud': 'DevOps & Infrastructure',
+      'ci/cd': 'DevOps & Infrastructure',
+      'ci/cd fundamentals': 'DevOps & Infrastructure',
+      'jenkins': 'DevOps & Infrastructure',
+      'ansible': 'DevOps & Infrastructure',
+      'terraform': 'DevOps & Infrastructure',
+      'vagrant': 'DevOps & Infrastructure',
+      'nginx': 'DevOps & Infrastructure',
+      'apache': 'DevOps & Infrastructure',
+      'git': 'DevOps & Infrastructure',
+      'git & github': 'DevOps & Infrastructure',
+      'github': 'DevOps & Infrastructure',
+      'gitlab': 'DevOps & Infrastructure',
+      'bash': 'DevOps & Infrastructure',
+      'linux': 'DevOps & Infrastructure',
+
+      // Data Science & ML
+      'machine learning': 'Data Science & Machine Learning',
+      'data science': 'Data Science & Machine Learning',
+      'data analysis': 'Data Science & Machine Learning',
+      'pandas': 'Data Science & Machine Learning',
+      'numpy': 'Data Science & Machine Learning',
+      'tensorflow': 'Data Science & Machine Learning',
+      'pytorch': 'Data Science & Machine Learning',
+      'nlp': 'Data Science & Machine Learning',
+      'deep learning': 'Data Science & Machine Learning',
+      'scikit-learn': 'Data Science & Machine Learning',
+      'keras': 'Data Science & Machine Learning',
+      'tableau': 'Data Science & Machine Learning',
+      'power bi': 'Data Science & Machine Learning',
+      'excel': 'Data Science & Machine Learning',
+      'sheets': 'Data Science & Machine Learning',
+      'matplotlib': 'Data Science & Machine Learning',
+      'seaborn': 'Data Science & Machine Learning',
+      'statistics': 'Data Science & Machine Learning',
+
+      // Design & Marketing
+      'ui/ux': 'Design & UX',
+      'ui': 'Design & UX',
+      'ux': 'Design & UX',
+      'figma': 'Design & UX',
+      'photoshop': 'Design & UX',
+      'illustrator': 'Design & UX',
+      'graphic design': 'Design & UX',
+      'wordpress': 'Design & UX',
+      'content writing': 'Design & UX',
+      'digital marketing': 'Design & UX',
+      'marketing': 'Design & UX',
+      'seo': 'Design & UX',
+      'sem': 'Design & UX',
+      'social media': 'Design & UX',
+
+      // PM & Methodologies
+      'agile/scrum methodology': 'Agile & Project Management',
+      'agile': 'Agile & Project Management',
+      'scrum': 'Agile & Project Management',
+      'agile/scrum': 'Agile & Project Management',
+      'project management': 'Agile & Project Management',
+      'communication skills': 'Agile & Project Management',
+      'problem solving': 'Agile & Project Management',
+      'attention to detail': 'Agile & Project Management',
+  };
+
+  function getRecommendedCourse(category, skills) {
+      const skillsStr = skills.join(', ');
+      switch (category) {
+          case 'Frontend Development':
+              return `Complete Front-end Development Course (covers: ${skillsStr})`;
+          case 'Backend Development':
+              return `Advanced Backend Engineering Path (covers: ${skillsStr})`;
+          case 'DevOps & Infrastructure':
+              return `DevOps, Git & CI/CD Masterclass (covers: ${skillsStr})`;
+          case 'Data Science & Machine Learning':
+              return `Data Science & AI/ML Bootcamp (covers: ${skillsStr})`;
+          case 'Design & UX':
+              return `UI/UX Design & Digital Marketing Essentials (covers: ${skillsStr})`;
+          case 'Agile & Project Management':
+              return `Agile, Scrum & Leadership Certification (covers: ${skillsStr})`;
+          default:
+              return `Specialized Professional Skill Building (covers: ${skillsStr})`;
+      }
+  }
+
+  function getRecommendationsJS(unmatchedSkills) {
+      const categories = {};
+      unmatchedSkills.forEach(skill => {
+          const normalizedSkill = skill.toLowerCase().trim();
+          let matchedCategory = 'Other Professional Skills';
+
+          for (const [key, category] of Object.entries(skillToCategory)) {
+              if (normalizedSkill === key || normalizedSkill.includes(key) || key.includes(normalizedSkill)) {
+                  matchedCategory = category;
+                  break;
+              }
+          }
+
+          if (!categories[matchedCategory]) {
+              categories[matchedCategory] = [];
+          }
+          categories[matchedCategory].push(skill);
+      });
+
+      const result = [];
+      for (const [catName, skills] of Object.entries(categories)) {
+          result.push({
+              category: catName,
+              skills: skills,
+              course: getRecommendedCourse(catName, skills)
+          });
+      }
+      return result;
+  }
+
+  let popoverPinned = false;
+  let currentPillEl = null;
+
+  function showRecPopover(el, pin = false) {
+      const popover = document.getElementById('recPopover');
+      const closeBtn = document.getElementById('recPopoverClose');
+      if (!popover) return;
+
+      if (popoverPinned && !pin) return; // Don't override if pinned
+
+      currentPillEl = el;
+
+      if (pin) {
+          popoverPinned = true;
+          // Pinned mode: full scrollable height
+          document.getElementById('recPopoverContent').style.maxHeight = '380px';
+          document.getElementById('recPopoverContent').style.overflowY = 'auto';
+          if (closeBtn) closeBtn.style.display = 'flex';
+      } else {
+          popoverPinned = false;
+          // Hover preview
+          document.getElementById('recPopoverContent').style.maxHeight = '320px';
+          document.getElementById('recPopoverContent').style.overflowY = 'auto';
+          if (closeBtn) closeBtn.style.display = 'none';
+      }
+
+      const recs = JSON.parse(el.getAttribute('data-recs') || '[]');
+      let html = '';
+      recs.forEach(r => {
+          const skillsList = r.skills.map(s =>
+              `<span style="display:inline-flex;padding:3px 10px;border-radius:6px;font-size:11px;font-weight:600;background:none;color:#0f172a;border:none;margin-right:5px;margin-bottom:5px;">${s}</span>`
+          ).join('');
+          html += `<div style="padding-bottom:10px;border-bottom:1px solid #f1f5f9;margin-bottom:10px;">
+              <div style="font-size:9px;font-weight:700;text-transform:uppercase;color:#94a3b8;letter-spacing:0.07em;margin-bottom:6px;">${r.category}</div>
+              <div style="display:flex;flex-wrap:wrap;">${skillsList}</div>
+          </div>`;
+      });
+      document.getElementById('recPopoverContent').innerHTML = html;
+
+      // Position: right of pill, pushed upward to align near top of the section
+      const rect = el.getBoundingClientRect();
+      const popW = 320;
+      const popH = pin ? 420 : 360;
+      let left = rect.right + 12;
+      // Push top upward — align near top of page (below navbar)
+      let top = rect.top - 260;
+      // Clamp: minimum 60px from top (below navbar), not off-screen bottom
+      if (top < 60) top = 60;
+      if (top + popH > window.innerHeight - 10) {
+          top = window.innerHeight - popH - 10;
+      }
+      // Fallback: if not enough room to the right, go below the pill instead
+      if (rect.right + popW + 16 > window.innerWidth) {
+          top = rect.bottom + 6;
+          left = Math.min(window.innerWidth - popW - 10, Math.max(10, rect.left));
+      }
+      popover.style.top  = `${top}px`;
+      popover.style.left = `${left}px`;
+      popover.style.display = 'block';
+      popover.style.pointerEvents = 'auto';
+      setTimeout(() => { popover.style.opacity = '1'; }, 10);
+  }
+
+  let recHideTimer = null;
+
+  function scheduleHideRecPopover() {
+      recHideTimer = setTimeout(() => {
+          const popover = document.getElementById('recPopover');
+          if (!popover || popoverPinned) return;
+          popover.style.opacity = '0';
+          popover.style.pointerEvents = 'none';
+          const closeBtn = document.getElementById('recPopoverClose');
+          if (closeBtn) closeBtn.style.display = 'none';
+          setTimeout(() => {
+              if (popover.style.opacity === '0') {
+                  popover.style.display = 'none';
+              }
+          }, 200);
+      }, 120);
+  }
+
+  function closeRecPopoverPinned() {
+      popoverPinned = false;
+      currentPillEl = null;
+      const popover = document.getElementById('recPopover');
+      const closeBtn = document.getElementById('recPopoverClose');
+      if (!popover) return;
+      popover.style.opacity = '0';
+      popover.style.pointerEvents = 'none';
+      if (closeBtn) closeBtn.style.display = 'none';
+      setTimeout(() => { popover.style.display = 'none'; }, 200);
+  }
+
+  function cancelHideRecPopover() {
+      if (recHideTimer) { clearTimeout(recHideTimer); recHideTimer = null; }
+  }
+
+  // Pill hover — show on enter, schedule hide on leave
+  document.addEventListener('mouseover', function(e) {
+      const pill = e.target.closest('.recommendation-pill');
+      if (pill) { cancelHideRecPopover(); showRecPopover(pill); }
+  });
+
+  document.addEventListener('mouseout', function(e) {
+      const pill = e.target.closest('.recommendation-pill');
+      if (pill) { scheduleHideRecPopover(); }
+  });
+
+  // Popover hover — keep open while mouse is inside
+  document.addEventListener('DOMContentLoaded', function() {
+      const recPopoverEl = document.getElementById('recPopover');
+      if (recPopoverEl) {
+          recPopoverEl.addEventListener('mouseenter', cancelHideRecPopover);
+          recPopoverEl.addEventListener('mouseleave', scheduleHideRecPopover);
+      }
+  });
+
+  // Close on outside click; intercept [data-match], [data-app-status] and .recommendation-pill elements
   document.addEventListener('click', function(e) {
       const modal = document.getElementById('matchDetailsModal');
       if (e.target === modal) { closeMatchModal(); return; }
@@ -696,8 +1031,30 @@
               console.error('Failed to parse status details:', err);
           }
       }
+
+      const recPill = e.target.closest('.recommendation-pill');
+      if (recPill) {
+          showRecPopover(recPill, true);
+          e.stopPropagation();
+          return;
+      }
+
+      const popover = document.getElementById('recPopover');
+      if (popover && !popover.contains(e.target)) {
+          closeRecPopoverPinned();
+      }
   });
 </script>
 @stack('scripts')
+{{-- Popover for Hover/Click recommendations --}}
+<div id="recPopover" style="position:fixed; width:320px; display:none; opacity:0; background:#fff; border:1.5px solid #e0e7ff; border-radius:14px; z-index:999999; box-shadow:0 12px 40px rgba(79,70,229,0.15); padding:0; pointer-events:none; transition:opacity 0.18s ease;">
+    {{-- Header --}}
+    <div style="display:flex; align-items:center; justify-content:space-between; padding:13px 16px 9px; border-bottom:1.5px solid #e0e7ff; flex-shrink:0;">
+        <span style="font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:0.09em; color:#16a34a;">Skill Recommendations</span>
+        <button id="recPopoverClose" onclick="closeRecPopoverPinned()" style="display:none; align-items:center; justify-content:center; width:22px; height:22px; border-radius:50%; border:none; background:#ede9fe; color:#4f46e5; font-size:14px; cursor:pointer; line-height:1; font-weight:700; padding:0;" title="Close">&times;</button>
+    </div>
+    {{-- Scrollable content --}}
+    <div id="recPopoverContent" style="padding:12px 16px 14px; display:flex; flex-direction:column; gap:0; max-height:320px; overflow-y:auto;"></div>
+</div>
 </body>
 </html>

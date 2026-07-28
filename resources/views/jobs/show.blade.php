@@ -79,6 +79,9 @@
                         'portfolio_match'  => $details['portfolio_match'],
                         'composite'        => $details['composite'],
                     ];
+
+                    // Compute skill recommendations from unmatched skills
+                    $recs = \App\Services\Recommendation::categorizeSkills($details['unmatched_skills'] ?? []);
                     
                     // Explicit classes to prevent Tailwind purging issues
                     if ($score >= 70) {
@@ -95,7 +98,7 @@
                 <div class="shrink-0 text-center p-6 rounded-2xl bg-slate-50 dark:bg-slate-800/30 border border-slate-100 dark:border-slate-800 w-full md:w-auto md:min-w-[200px]">
                     {{-- Clickable score zone --}}
                     <div class="cursor-pointer p-3 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-all duration-200 group mb-3"
-                         data-match='@json($matchDataArr)'
+                         data-match="{{ json_encode($matchDataArr) }}"
                          title="Click to see match breakdown (matches & non-matches)">
                         <div class="text-5xl font-extrabold mono {{ $scoreColorClass }} mb-1 group-hover:scale-105 transition-transform duration-200">{{ $score }}%</div>
                         <div class="text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">Match Score</div>
@@ -194,6 +197,15 @@
                 <div class="flex justify-between py-1 border-b border-slate-55 dark:border-slate-800">
                     <span>Last updated</span>
                     <span class="text-slate-800 dark:text-slate-300 font-semibold">{{ $job->updated_at->diffForHumans() }}</span>
+                </div>
+                @endif
+                @if(isset($recs) && !empty($recs))
+                <div class="flex justify-between py-1">
+                    <span class="recommendation-pill hover-popover" data-recs="{{ json_encode($recs) }}"
+                          style="display:inline-flex; align-items:center; font-size:12px; font-weight:500; color:#16a34a; background:none; border:none; padding:0; cursor:pointer;"
+                          title="Hover or click to see skill recommendations">
+                        Recommendation
+                    </span>
                 </div>
                 @endif
 
