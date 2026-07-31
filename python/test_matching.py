@@ -163,8 +163,8 @@ if db.users and db.jobs:
             job_text = job_data.get("text", "")
             base_score = max(0, min(100, int(sim * 100)))
             skills_pct = int(SkillExperienceMatcher.calculate_match(user_text, job_text) * 100)
-            boosted_base = base_score + (100 - base_score) * (skills_pct / 100.0)
-            final = int(boosted_base * 0.40 + skills_pct * 0.60)
+            from match import _hybrid_score
+            final = _hybrid_score(sim, user_text, job_text)
             scored_results.append((jid, base_score, skills_pct, final))
         
         scored_results.sort(key=lambda x: x[3], reverse=True)

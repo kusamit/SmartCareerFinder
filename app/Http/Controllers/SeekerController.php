@@ -67,12 +67,16 @@ class SeekerController extends Controller
             ->toArray();
 
         // Profile completeness percentage (simple heuristic)
+        $user->loadMissing('educations');
         $filled = 0;
-        $fields = ['name','skills','education','experience_years','preferred_role','location','profile_summary'];
+        $fields = ['name','skills','experience_years','preferred_role','location','profile_summary'];
         foreach ($fields as $f) {
             if (!empty($user->$f)) $filled++;
         }
-        $profileCompleteness = intval(($filled / count($fields)) * 100);
+        // Education is stored in the educations relationship, not the legacy education column
+        if ($user->educations->isNotEmpty()) $filled++;
+        $totalFields = count($fields) + 1; // +1 for education
+        $profileCompleteness = intval(($filled / $totalFields) * 100);
 
         // Calculate monthly application counts for the last 6 months
         $months = [];

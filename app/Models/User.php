@@ -351,7 +351,7 @@ class User extends Model
                 }
             }
             if ($matchedCount > 0 && count($jobSkills) > 0) {
-                $faissScore = (int) round(30 + 40 * ($matchedCount / count($jobSkills)));
+                $faissScore = (int) round(100 * ($matchedCount / count($jobSkills)));
             }
         }
         // ─────────────────────────────────────────────────────────────────────
@@ -417,13 +417,19 @@ class User extends Model
             "python", "php", "javascript", "react", "laravel", "sql", "css", "html", "docker", "django", 
             "postgresql", "node", "java", "c#", "c++", "ruby", "rails", "git", "bash", "linux", "aws", 
             "gcp", "azure", "tailwind", "rest", "api", "apis", "vue", "angular", "typescript", "nextjs", 
-            "next.js", "mongodb", "mysql", "nosql", "sass", "bootstrap", "jquery", "graphql",
+            "next.js", "mongodb", "mysql", "nosql", "sass", "bootstrap", "jquery", "graphql", "html5", "css3",
+            "react.js", "vue.js", "node.js", "express", "express.js", "flask", "fastapi", "spring", "spring boot", "redis", "firebase",
             "machine learning", "data science", "data analysis", "pandas", "numpy", "tensorflow", "pytorch", 
-            "nlp", "deep learning", "scikit-learn", "keras", "tableau", "power bi", "excel", "sheets", "matplotlib", "seaborn",
+            "nlp", "deep learning", "scikit-learn", "keras", "tableau", "power bi", "excel", "sheets", "matplotlib", "seaborn", "statistics",
             "devops", "kubernetes", "ci/cd", "jenkins", "ansible", "terraform", "vagrant", "nginx", "apache",
-            "digital marketing", "marketing", "seo", "sem", "social media", "content writing", "photoshop", 
-            "illustrator", "figma", "ui/ux", "ui", "ux", "graphic design", "wordpress", "github", "gitlab",
-            "communication skills", "problem solving", "statistics", "attention to detail"
+            "figma", "adobe xd", "sketch", "invision", "zeplin", "ui design", "ux design", "ui/ux", "ui/ux design", "ui", "ux",
+            "wireframing", "prototyping", "user research", "ux research", "ui research", "usability testing", "interaction design",
+            "design thinking", "information architecture", "user journey mapping", "personas", "design systems", "responsive design",
+            "mobile app design", "website design", "dashboard design", "user experience design", "web design", "app design", "product design",
+            "web optimization", "digital marketing", "marketing", "seo", "sem", "social media", "content writing", "photoshop", 
+            "illustrator", "graphic design", "adobe illustrator", "adobe photoshop", "canva", "coreldraw", "indesign", "wordpress", "github", "gitlab",
+            "communication skills", "problem solving", "attention to detail", "teamwork", "leadership", "agile", "scrum", "agile/scrum",
+            "project management", "jira", "confluence"
         ];
         
         usort($knownSkills, function($a, $b) {
@@ -494,13 +500,19 @@ class User extends Model
             "python", "php", "javascript", "react", "laravel", "sql", "css", "html", "docker", "django", 
             "postgresql", "node", "java", "c#", "c++", "ruby", "rails", "git", "bash", "linux", "aws", 
             "gcp", "azure", "tailwind", "rest", "api", "apis", "vue", "angular", "typescript", "nextjs", 
-            "next.js", "mongodb", "mysql", "nosql", "sass", "bootstrap", "jquery", "graphql",
+            "next.js", "mongodb", "mysql", "nosql", "sass", "bootstrap", "jquery", "graphql", "html5", "css3",
+            "react.js", "vue.js", "node.js", "express", "express.js", "flask", "fastapi", "spring", "spring boot", "redis", "firebase",
             "machine learning", "data science", "data analysis", "pandas", "numpy", "tensorflow", "pytorch", 
-            "nlp", "deep learning", "scikit-learn", "keras", "tableau", "power bi", "excel", "sheets", "matplotlib", "seaborn",
+            "nlp", "deep learning", "scikit-learn", "keras", "tableau", "power bi", "excel", "sheets", "matplotlib", "seaborn", "statistics",
             "devops", "kubernetes", "ci/cd", "jenkins", "ansible", "terraform", "vagrant", "nginx", "apache",
-            "digital marketing", "marketing", "seo", "sem", "social media", "content writing", "photoshop", 
-            "illustrator", "figma", "ui/ux", "ui", "ux", "graphic design", "wordpress", "github", "gitlab",
-            "communication skills", "problem solving", "statistics", "attention to detail"
+            "figma", "adobe xd", "sketch", "invision", "zeplin", "ui design", "ux design", "ui/ux", "ui/ux design", "ui", "ux",
+            "wireframing", "prototyping", "user research", "ux research", "ui research", "usability testing", "interaction design",
+            "design thinking", "information architecture", "user journey mapping", "personas", "design systems", "responsive design",
+            "mobile app design", "website design", "dashboard design", "user experience design", "web design", "app design", "product design",
+            "web optimization", "digital marketing", "marketing", "seo", "sem", "social media", "content writing", "photoshop", 
+            "illustrator", "graphic design", "adobe illustrator", "adobe photoshop", "canva", "coreldraw", "indesign", "wordpress", "github", "gitlab",
+            "communication skills", "problem solving", "attention to detail", "teamwork", "leadership", "agile", "scrum", "agile/scrum",
+            "project management", "jira", "confluence"
         ];
         
         usort($knownSkills, function($a, $b) {
@@ -741,7 +753,7 @@ class User extends Model
         $faissApprox   = min(100, (int) round($faissWeighted / 0.70));
 
         if ($faissApprox <= 0 && count($matchedSkills) > 0 && count($jobSkills) > 0) {
-            $faissApprox = (int) round(30 + 40 * (count($matchedSkills) / count($jobSkills)));
+            $faissApprox = (int) round(100 * (count($matchedSkills) / count($jobSkills)));
             $faissWeighted = (int) round($faissApprox * 0.70);
             if ($storedScore > 0) {
                 $storedScore = $faissWeighted + $bonusPts;

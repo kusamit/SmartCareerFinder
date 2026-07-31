@@ -275,7 +275,7 @@
         </div>
 
         {{-- Top: Matched / Unmatched score pills --}}
-        <div class="grid grid-cols-2 gap-4 mb-6" id="matchScorePillsSection">
+        <div class="grid grid-cols-2 gap-4 mb-6" id="matchScorePillsSection" style="display: grid !important;">
             <div class="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/30 rounded-2xl p-4 flex flex-col justify-center">
                 <div class="text-3xl font-extrabold text-emerald-600 dark:text-emerald-400 mono" id="modalScoreMatched">0%</div>
                 <div class="text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 mt-1">Final Match Score</div>
@@ -287,7 +287,7 @@
         </div>
 
         {{-- ===== SCORING BREAKDOWN TABLE ===== --}}
-        <div class="mb-6" id="scoreBreakdownSection">
+        <div class="mb-6" id="scoreBreakdownSection" style="display: block !important;">
             <div class="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3 pb-1 border-b border-slate-100">Scoring Breakdown (How the score is calculated)</div>
             <div id="scoreBreakdownRows">
                 {{-- Rows injected by JS --}}
@@ -497,43 +497,50 @@
       const breakdownBlock = document.getElementById('scoreBreakdownSection');
       const scorePillsBlock = document.getElementById('matchScorePillsSection');
       if (breakdownBlock) {
-          breakdownBlock.style.display = 'block';
+        //   breakdownBlock.style.setProperty('display', 'block', 'important');
+        breakdownBlock.style.setProperty('display', 'block', 'important');
+
       }
       if (scorePillsBlock) {
-          scorePillsBlock.style.display = 'grid';
+          scorePillsBlock.style.setProperty('display', 'grid', 'important');
       }
 
       // ── Scoring Breakdown ─────────────────────────────────────────────────
       const c = data.composite || {};
-      const faissW   = c.faiss_weighted  ?? 0;
-      const faissMax = c.faiss_max       ?? 70;
-      const locPts   = c.location_pts    ?? 0;
-      const locMax   = c.location_max    ?? 10;
-      const portPts  = c.portfolio_pts   ?? 0;
-      const portMax  = c.portfolio_max   ?? 10;
-      const domPts   = c.domain_pts      ?? 0;
-      const domMax   = c.domain_max      ?? 10;
+      const faissW   = Number(c.faiss_weighted  ?? 0);
+      const faissMax = Number(c.faiss_max       ?? 70);
+      const locPts   = Number(c.location_pts    ?? 0);
+      const locMax   = Number(c.location_max    ?? 10);
+      const portPts  = Number(c.portfolio_pts   ?? 0);
+      const portMax  = Number(c.portfolio_max   ?? 10);
+      const domPts   = Number(c.domain_pts      ?? 0);
+      const domMax   = Number(c.domain_max      ?? 10);
 
-      const locMatch  = c.location_match  ?? data.location_match  ?? false;
-      const portMatch = c.portfolio_match ?? data.portfolio_match ?? false;
-      const domMatch  = c.domain_match    ?? data.role_match      ?? false;
-      // Which specific preferred role triggered the domain match (new multi-role support)
+      const locMatch  = !!(c.location_match  ?? data.location_match  ?? false);
+      const portMatch = !!(c.portfolio_match ?? data.portfolio_match ?? false);
+      const domMatch  = !!(c.domain_match    ?? data.role_match      ?? false);
       const domMatchedRole = c.domain_matched_role ?? data.role_matched_role ?? null;
 
-      // Compute actual total from breakdown components (fixes stale DB score showing 0)
+      // Compute actual total from breakdown components
       const actualTotal = Math.min(100, Math.round(faissW + locPts + portPts + domPts));
 
-      // Update score pills using the real computed score
+      // Update score pills
       document.getElementById('modalScoreMatched').innerText   = `${actualTotal}%`;
       document.getElementById('modalScoreUnmatched').innerText = `${100 - actualTotal}%`;
 
+      // Build breakdown rows
       let rows = '';
       rows += buildScoreRow('AI Semantic Score (FAISS)',  faissW, faissMax, faissW >= faissMax * 0.5);
       rows += buildScoreRow('Location Match',             locPts,  locMax,  locMatch);
-      rows += buildScoreRow('Portfolio / Projects',        portPts, portMax, portMatch);
-      rows += buildScoreRow('Preferred Job Domain',        domPts,  domMax,  domMatch);
+      rows += buildScoreRow('Portfolio / Projects',       portPts, portMax, portMatch);
+      rows += buildScoreRow('Preferred Job Domain',       domPts,  domMax,  domMatch);
 
-      document.getElementById('scoreBreakdownRows').innerHTML = rows;
+      // Force visibility of the breakdown section and inject rows
+      const breakdownRowsEl = document.getElementById('scoreBreakdownRows');
+      if (breakdownRowsEl) {
+          breakdownRowsEl.innerHTML = rows;
+          breakdownRowsEl.style.setProperty('display', 'block', 'important');
+      }
       document.getElementById('modalTotalScore').innerText    = `${actualTotal} / 100 pts`;
 
       // ── Matched Skills ────────────────────────────────────────────────────
