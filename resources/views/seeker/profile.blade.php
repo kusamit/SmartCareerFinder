@@ -44,12 +44,14 @@
     </div>
 
     {{-- ===== AI PROFILE SUMMARY ===== --}}
+{{--
     @if($user->profile_summary)
     <div class="ai-summary-card" style="margin-bottom: 20px;">
         <div class="ai-badge">AI Profile Summary</div>
         <p class="ai-summary-text">{{ $user->profile_summary }}</p>
     </div>
     @endif
+--}}
 
     {{-- ===== FORM CARD ===== --}}
     <div class="form-card">

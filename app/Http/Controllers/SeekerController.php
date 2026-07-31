@@ -132,7 +132,7 @@ class SeekerController extends Controller
         $user->save();
 
         // Python embedding and index update
-        $userText = $user->profile_summary . ' ' . $user->skills . ' ' . $user->preferred_role . ' ' . $user->location . ' ' . $user->education . ' ' . $user->portfolio;
+        $userText = $this->buildUserEmbedText($user);
         $escapedText = escapeshellarg($userText);
         $userId = escapeshellarg($user->id);
         $scriptPath = escapeshellarg(base_path('python/match.py'));
@@ -181,16 +181,15 @@ class SeekerController extends Controller
         // This is the root cause of the "0% on Find Jobs / 16% after applying" bug:
         // The apply() path triggers a fallback embed+rebuild, but jobs() did not.
         if (empty($scores)) {
-            $userText    = strip_tags(
-                $user->profile_summary . ' ' . $user->skills . ' ' . $user->preferred_role
-                . ' ' . $user->location . ' ' . $user->education . ' ' . $user->portfolio
-            );
+            $userText    = strip_tags($this->buildUserEmbedText($user));
             $escapedText = escapeshellarg($userText);
             $escapedId   = escapeshellarg($user->id);
 
             // Embed all active jobs that aren't already indexed
             foreach ($jobs as $j) {
-                $jobText    = strip_tags($j->title . ' ' . $j->key_skills . ' ' . $j->description . ' ' . $j->requirements . ' ' . $j->location . ' ' . $j->experience_required);
+                $rawJob     = $j->title . ' ' . $j->key_skills . ' ' . $j->description . ' ' . $j->requirements . ' ' . $j->location . ' ' . $j->experience_required;
+                $rawJob     = preg_replace('/<\/li>/i', ', ', $rawJob);
+                $jobText    = trim(preg_replace('/\s+/', ' ', strip_tags($rawJob)));
                 $escapedJt  = escapeshellarg($jobText);
                 $escapedJid = escapeshellarg($j->id);
                 shell_exec("python {$scriptPath} --embed-job --id {$escapedJid} --text {$escapedJt}");
@@ -225,61 +224,6 @@ class SeekerController extends Controller
         return view('seeker.jobs', compact('user', 'scored'));
     }
 
-    /**
-     * Find jobs by uploaded CV
-     * Step: Upload CV → extract text → match against jobs
-     */
-    public function findByCv(Request $request)
-    {
-        $request->validate(['cv' => 'required|file|mimes:pdf,doc,docx,txt|max:5120']);
-
-        $user = $this->authUser();
-        $file = $request->file('cv');
-
-        // Save CV path
-        $path     = $file->store('cvs', 'public');
-        $user->cv_path = $path;
-
-        // Extract text from CV (basic: read txt files; for PDF use pdftotext in production)
-        $cvText = '';
-        if ($file->getClientOriginalExtension() === 'txt') {
-            $cvText = file_get_contents($file->getRealPath());
-        } else {
-            // For PDF/DOC, we simulate extraction from filename + user's existing profile
-            $cvText = $user->profile_summary . ' ' . $user->skills;
-        }
-
-        $cvText = strtolower($cvText);
-
-        // Preprocess (Step 3)
-        $cvText = preg_replace('/[^a-z0-9\s]/', ' ', $cvText);
-        $cvText = preg_replace('/\s+/', ' ', $cvText);
-
-        $user->save();
-
-        // Search matching jobs by CV text using Python
-        $escapedCvText = escapeshellarg($cvText);
-        $scriptPath = escapeshellarg(base_path('python/match.py'));
-        $cmd = "python {$scriptPath} --search-cv --text {$escapedCvText}";
-        $output = shell_exec($cmd);
-        $scores = json_decode($output, true) ?? [];
-
-        $scoreMap = [];
-        foreach ($scores as $s) {
-            $scoreMap[$s['job_id']] = $s['score'];
-        }
-
-        $jobs = Job::where('status', 'open')->get();
-        $scored = $jobs->map(function ($job) use ($scoreMap, $user) {
-            $faissScore        = $scoreMap[$job->id] ?? 0;
-            $comp              = $user->compositeScore($job, $faissScore);
-            $job->match_score  = $comp['final_score'];
-            $job->match_composite = $comp;
-            return $job;
-        })->sortByDesc('match_score')->values();
-
-        return view('seeker.jobs', compact('user', 'scored'))->with('cv_mode', true);
-    }
 
     public function apply(Request $request, Job $job)
     {
@@ -441,7 +385,7 @@ class SeekerController extends Controller
         $user->save();
 
         // Python embedding and index update
-        $userText = $user->profile_summary . ' ' . $user->skills . ' ' . $user->preferred_role . ' ' . $user->location . ' ' . $user->education . ' ' . $user->portfolio;
+        $userText = $this->buildUserEmbedText($user);
         $escapedText = escapeshellarg($userText);
         $userId = escapeshellarg($user->id);
         $scriptPath = escapeshellarg(base_path('python/match.py'));
@@ -471,5 +415,28 @@ class SeekerController extends Controller
         $seeker->load('educations');
         $cvSummary = $seeker->generateCvSummary();
         return view('provider.cv-pdf', compact('seeker', 'cvSummary'));
+    }
+
+    /**
+     * Build the full text string sent to Python for FAISS embedding.
+     * Includes education from the educations relationship (not the empty
+     * $user->education column) so adding/editing education records
+     * actually changes the embedding and match scores.
+     */
+    private function buildUserEmbedText(User $user): string
+    {
+        $user->load('educations');
+        $eduText = $user->educations->map(function ($e) {
+            return trim("{$e->degree} {$e->field_of_study} {$e->school} {$e->start_year} {$e->end_year}");
+        })->join(' ');
+
+        return implode(' ', array_filter([
+            $user->profile_summary,
+            strip_tags($user->skills        ?? ''),
+            strip_tags($user->preferred_role ?? ''),
+            $user->location                 ?? '',
+            $eduText,
+            strip_tags($user->portfolio     ?? ''),
+        ]));
     }
 }

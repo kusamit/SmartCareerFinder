@@ -250,15 +250,16 @@ class Recommendation
      * @param array $unmatchedSkills
      * @return array
      */
-    public static function categorizeSkills(array $unmatchedSkills): array
+    public static function categorizeSkills(array $unmatchedSkills, array $fallbackSkills = []): array
     {
-        if (empty($unmatchedSkills)) {
+        $skillsToUse = !empty($unmatchedSkills) ? $unmatchedSkills : $fallbackSkills;
+        if (empty($skillsToUse)) {
             return [];
         }
 
         try {
             $scriptPath = escapeshellarg(base_path('python/recommend.py'));
-            $escapedSkills = array_map('escapeshellarg', array_values($unmatchedSkills));
+            $escapedSkills = array_map('escapeshellarg', array_values($skillsToUse));
             $cmd = "python {$scriptPath} " . implode(' ', $escapedSkills);
             $output = shell_exec($cmd);
             
@@ -275,7 +276,7 @@ class Recommendation
         // --- FALLBACK (Deterministic Exact Matching) ---
         $categories = [];
 
-        foreach ($unmatchedSkills as $skill) {
+        foreach ($skillsToUse as $skill) {
             $normalizedSkill = strtolower(trim($skill));
             $matchedCategory = 'Other Professional Skills';
 

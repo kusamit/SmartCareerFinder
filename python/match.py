@@ -148,9 +148,13 @@ class VectorDatabase:
 # Hybrid Scoring Helper
 
 def _hybrid_score(base_sim, user_text, job_text):
+    """Compute hybrid match score combining FAISS vector similarity with skill-experience matching.
 
-#Compute the hybrid match score combining FAISS vector similarity with skill-experience matching.
-
+    Formula: 40% from FAISS base + 60% from skill match.
+    The base vector similarity is preserved as a signal — jobs that are
+    semantically very different from the seeker (e.g., IT Support vs PHP Dev)
+    will naturally score lower regardless of any skill overlap.
+    """
     base_score       = max(0, min(100, int(base_sim * 100)))
     skills_match_pct = int(SkillExperienceMatcher.calculate_match(user_text, job_text) * 100)
     boosted_base     = base_score + (100 - base_score) * (skills_match_pct / 100.0)

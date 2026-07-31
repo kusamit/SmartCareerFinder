@@ -80,8 +80,8 @@
                         'composite'        => $details['composite'],
                     ];
 
-                    // Compute skill recommendations from unmatched skills
-                    $recs = \App\Services\Recommendation::categorizeSkills($details['unmatched_skills'] ?? []);
+                    // Compute skill recommendations from unmatched skills (or job skills fallback)
+                    $recs = \App\Services\Recommendation::categorizeSkills($details['unmatched_skills'] ?? [], $job->skillsArray());
                     
                     // Explicit classes to prevent Tailwind purging issues
                     if ($score >= 70) {

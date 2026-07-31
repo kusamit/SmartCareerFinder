@@ -95,14 +95,10 @@
                     'composite'        => $finalComp,
                 ];
 
-                $recs = [];
-                $recText = '';
-                if (!empty($details['unmatched_skills'])) {
-                    $recs = \App\Services\Recommendation::categorizeSkills($details['unmatched_skills']);
-                    $recCategories = array_column($recs, 'category');
-                    $recText = implode(' & ', array_slice($recCategories, 0, 2));
-                }
-            @endphp
+                $recs = \App\Services\Recommendation::categorizeSkills($details['unmatched_skills'] ?? [], $app->job->skillsArray());
+                $recCategories = array_column($recs, 'category');
+                $recText = implode(' & ', array_slice($recCategories, 0, 2));
+@endphp
             <div class="app-row">
                 <div style="flex: 1; min-width: 0;">
                     <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 2px;">

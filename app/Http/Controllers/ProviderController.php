@@ -104,7 +104,10 @@ class ProviderController extends Controller
         $job = Job::create($data);
 
         // Python embedding and index update
-        $jobText = $job->title . ' ' . strip_tags($job->key_skills) . ' ' . strip_tags($job->description) . ' ' . strip_tags($job->requirements) . ' ' . $job->location . ' ' . $job->experience_required;
+        // Build job text: convert HTML list items to comma-separated so skills parse correctly
+        $rawJob    = $job->title . ' ' . $job->key_skills . ' ' . $job->description . ' ' . $job->requirements . ' ' . $job->location . ' ' . $job->experience_required;
+        $rawJob    = preg_replace('/<\/li>/i', ', ', $rawJob);
+        $jobText   = trim(preg_replace('/\s+/', ' ', strip_tags($rawJob)));
         $escapedText = escapeshellarg($jobText);
         $jobId = escapeshellarg($job->id);
         $scriptPath = escapeshellarg(base_path('python/match.py'));
@@ -140,7 +143,10 @@ class ProviderController extends Controller
         $job->update($data);
 
         // Python embedding and index update
-        $jobText = $job->title . ' ' . strip_tags($job->key_skills) . ' ' . strip_tags($job->description) . ' ' . strip_tags($job->requirements) . ' ' . $job->location . ' ' . $job->experience_required;
+        // Build job text: convert HTML list items to comma-separated so skills parse correctly
+        $rawJob    = $job->title . ' ' . $job->key_skills . ' ' . $job->description . ' ' . $job->requirements . ' ' . $job->location . ' ' . $job->experience_required;
+        $rawJob    = preg_replace('/<\/li>/i', ', ', $rawJob);
+        $jobText   = trim(preg_replace('/\s+/', ' ', strip_tags($rawJob)));
         $escapedText = escapeshellarg($jobText);
         $jobId = escapeshellarg($job->id);
         $scriptPath = escapeshellarg(base_path('python/match.py'));

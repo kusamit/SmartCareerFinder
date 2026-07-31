@@ -31,13 +31,17 @@ class JobController extends Controller
 
                 // ── Auto-sync fallback: user vector missing from FAISS index ──────────
                 if (empty($results)) {
+                    $user->load('educations');
+                    $eduText     = $user->educations->map(fn($e) => "{$e->degree} {$e->field_of_study} {$e->school}")->join(' ');
                     $userText    = strip_tags(
                         $user->profile_summary . ' ' . $user->skills . ' ' . $user->preferred_role
-                        . ' ' . $user->location . ' ' . $user->education . ' ' . $user->portfolio
+                        . ' ' . $user->location . ' ' . $eduText . ' ' . $user->portfolio
                     );
                     $escapedText = escapeshellarg($userText);
                     $escapedUid  = escapeshellarg($user->id);
-                    $jobText     = strip_tags($job->title . ' ' . $job->key_skills . ' ' . $job->description . ' ' . $job->requirements . ' ' . $job->location . ' ' . $job->experience_required);
+                    $rawJob      = $job->title . ' ' . $job->key_skills . ' ' . $job->description . ' ' . $job->requirements . ' ' . $job->location . ' ' . $job->experience_required;
+                    $rawJob      = preg_replace('/<\/li>/i', ', ', $rawJob);
+                    $jobText     = trim(preg_replace('/\s+/', ' ', strip_tags($rawJob)));
                     $escapedJt   = escapeshellarg($jobText);
                     $escapedJid  = escapeshellarg($job->id);
 

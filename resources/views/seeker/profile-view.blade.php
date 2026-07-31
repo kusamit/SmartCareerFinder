@@ -50,12 +50,14 @@
     </div>
 
     {{-- AI SUMMARY --}}
+    {{--
     @if($user->profile_summary)
     <div class="pv-ai-card">
         <div class="pv-ai-badge">AI-Generated Profile Summary</div>
         <p class="pv-ai-text">{{ $user->profile_summary }}</p>
     </div>
     @endif
+--}}
 
     {{-- HINT --}}
     <div class="pv-hint">

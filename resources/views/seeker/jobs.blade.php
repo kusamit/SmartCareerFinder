@@ -19,37 +19,11 @@
         <div>
             <div class="page-title">Job Matches</div>
             <div class="page-sub">
-                @if(session('cv_mode'))
-                    Results matched to your uploaded CV
-                @else
-                    Results matched to your profile &middot; {{ $scored->count() }} jobs found
-                @endif
+                Results matched to your profile &middot; {{ $scored->count() }} jobs found
             </div>
         </div>
-
-        {{-- CV Upload Panel --}}
-        <div class="cv-upload-card">
-            <div class="cv-label">Upload CV to Match</div>
-            <form method="POST" action="{{ route('seeker.jobs.cv') }}" enctype="multipart/form-data">
-                @csrf
-                <div class="file-input-wrapper">
-                    <input type="file" name="cv" accept=".pdf,.doc,.docx,.txt" class="file-input" required>
-                    <button type="submit" class="btn-find">Find</button>
-                </div>
-            </form>
-            @error('cv')
-            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-            @enderror
-        </div>
     </div>
 
-    {{-- ===== ALERT BANNER ===== --}}
-    @if(session('cv_mode'))
-    <div class="banner-alert">
-        <span class="banner-alert-text">Showing results matched to your uploaded CV</span>
-        <a href="{{ route('seeker.jobs') }}" class="banner-alert-link">Reset Filters</a>
-    </div>
-    @endif
 
     {{-- ===== JOB LIST ===== --}}
     @forelse($scored as $job)

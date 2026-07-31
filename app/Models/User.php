@@ -147,7 +147,9 @@ class User extends Model
         $escapedUserText = escapeshellarg($profileText);
         shell_exec("python {$scriptPath} --embed-user --id {$userId} --text {$escapedUserText}");
 
-        $jobText = strip_tags($job->title . ' ' . $job->key_skills . ' ' . $job->description . ' ' . $job->requirements . ' ' . $job->location . ' ' . $job->experience_required);
+        $rawJob = $job->title . ' ' . $job->key_skills . ' ' . $job->description . ' ' . $job->requirements . ' ' . $job->location . ' ' . $job->experience_required;
+        $rawJob = preg_replace('/<\/li>/i', ', ', $rawJob);
+        $jobText = trim(preg_replace('/\s+/', ' ', strip_tags($rawJob)));
         $escapedJobText = escapeshellarg($jobText);
         shell_exec("python {$scriptPath} --embed-job --id {$jobId} --text {$escapedJobText}");
 

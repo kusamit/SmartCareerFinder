@@ -26,7 +26,6 @@ Route::middleware('auth.seeker')->prefix('seeker')->name('seeker.')->group(funct
     Route::get('/profile/cv', [SeekerController::class, 'viewCv'])->name('profile.cv');
     Route::post('/profile', [SeekerController::class, 'updateProfile'])->name('profile.update');
     Route::get('/jobs', [SeekerController::class, 'jobs'])->name('jobs');
-    Route::post('/jobs/find-by-cv', [SeekerController::class, 'findByCv'])->name('jobs.cv');
     Route::post('/jobs/{job}/apply', [SeekerController::class, 'apply'])->name('jobs.apply');
     Route::get('/applications', [SeekerController::class, 'applications'])->name('applications');
     Route::get('/education', [SeekerController::class, 'educationIndex'])->name('education');

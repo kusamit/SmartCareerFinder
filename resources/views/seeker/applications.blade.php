@@ -105,13 +105,9 @@
             'company'   => $app->job->company,
         ];
 
-        $recs = [];
-        $recText = '';
-        if (!empty($details['unmatched_skills'])) {
-            $recs = \App\Services\Recommendation::categorizeSkills($details['unmatched_skills']);
-            $recCategories = array_column($recs, 'category');
-            $recText = implode(' & ', array_slice($recCategories, 0, 2));
-        }
+        $recs = \App\Services\Recommendation::categorizeSkills($details['unmatched_skills'] ?? [], $app->job->skillsArray());
+        $recCategories = array_column($recs, 'category');
+        $recText = implode(' & ', array_slice($recCategories, 0, 2));
     @endphp
     <div class="app-card" style="flex-wrap:wrap;">
         {{-- Info --}}
