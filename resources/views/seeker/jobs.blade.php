@@ -178,8 +178,8 @@
     </div>
     @empty
     <div class="empty-state">
-        <div style="font-size:40px; margin-bottom:12px;">🎉</div>
-        <h3>You've applied to all available jobs!</h3>
+        <div style="font-size:40px; margin-bottom:12px;"></div>
+        <!-- <h3>You've applied to all available jobs!</h3> -->
         <p>No new open jobs to show right now. Check your <a href="{{ route('seeker.applications') }}" style="color:#6366f1; font-weight:700;">Applications</a> to track your progress, or check back later for new listings.</p>
     </div>
     @endforelse

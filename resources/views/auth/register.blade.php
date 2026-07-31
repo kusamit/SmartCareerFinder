@@ -278,27 +278,27 @@
             <div class="form-grid">
                 <div class="field">
                     <label class="field-label" for="name">Full Name</label>
-                    <input type="text" id="name" name="name" value="{{ old('name') }}" class="field-input" placeholder="e.g. John Doe" required>
+                    <input type="text" id="name" name="name" value="{{ old('name') }}" class="field-input" placeholder="" required>
                 </div>
 
                 <div class="field">
                     <label class="field-label" for="email">Email Address</label>
-                    <input type="email" id="email" name="email" value="{{ old('email') }}" class="field-input" placeholder="you@example.com" required>
+                    <input type="email" id="email" name="email" value="{{ old('email') }}" class="field-input" placeholder="" required>
                 </div>
 
                 <div class="field" id="companyField" style="display: none; grid-column: 1 / -1;">
                     <label class="field-label" for="company_name">Company Name</label>
-                    <input type="text" id="company_name" name="company_name" value="{{ old('company_name') }}" class="field-input" placeholder="e.g. TechCorp Solutions">
+                    <input type="text" id="company_name" name="company_name" value="{{ old('company_name') }}" class="field-input" placeholder="">
                 </div>
 
                 <div class="field">
                     <label class="field-label" for="password">Password</label>
-                    <input type="password" id="password" name="password" class="field-input" placeholder="Minimum 6 characters" required>
+                    <input type="password" id="password" name="password" class="field-input" placeholder="" required>
                 </div>
 
                 <div class="field">
                     <label class="field-label" for="password_confirmation">Confirm Password</label>
-                    <input type="password" id="password_confirmation" name="password_confirmation" class="field-input" placeholder="Repeat your password" required>
+                    <input type="password" id="password_confirmation" name="password_confirmation" class="field-input" placeholder="" required>
                 </div>
             </div>
 

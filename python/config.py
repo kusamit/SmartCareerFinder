@@ -107,14 +107,20 @@ CATEGORIES = {
 
     # Block E: Skills (1 dimension)
     8: {
-        "name": "Skills (Tech Stack)",
+        "name": "Skills (Tech Stack & Design)",
         "anchors": [
+            # Tech
             "python", "php", "javascript", "react", "laravel", "sql", "css",
             "html", "docker", "django", "postgresql", "node", "java", "c#",
             "c++", "ruby", "rails", "git", "bash", "linux", "aws", "gcp",
             "azure", "tailwind", "rest", "api", "apis", "vue", "angular",
             "typescript", "nextjs", "next.js", "mongodb", "mysql", "nosql",
-            "sass", "bootstrap", "jquery", "graphql"
+            "sass", "bootstrap", "jquery", "graphql",
+            # UI/UX & Design
+            "figma", "adobe xd", "sketch", "invision",
+            "wireframing", "prototyping", "user research", "ux research",
+            "responsive design", "ui design", "ux design",
+            "photoshop", "illustrator", "canva",
         ]
     },
 

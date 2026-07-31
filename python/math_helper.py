@@ -26,10 +26,17 @@ def dist_l2(a, b):
 
 
 def l2_normalize(v):
+    """
+    L2-normalise a vector to unit length.
 
+    If the norm is effectively zero (no meaningful content detected), returns
+    a zero vector instead of a uniform unit vector.  The uniform fallback was
+    the root cause of FAISS scores of 70/70 on completely unrelated profiles:
+    two zero vectors both mapped to [1/√10, ...] whose dot product is 1.0.
+    A zero vector correctly yields cosine similarity = 0.0 (no match).
+    """
     norm = math.sqrt(sum(x * x for x in v))
     if norm > 1e-9:
         return [x / norm for x in v]
-    # Fallback: uniform distribution across all dimensions
-    dim = len(v)
-    return [1.0 / math.sqrt(float(dim))] * dim if dim > 0 else v
+    # Return zero vector — no category anchors matched, so no semantic similarity
+    return [0.0] * len(v)

@@ -13,19 +13,38 @@ KNOWN_SKILLS = sorted(list(set([
     "rails", "git", "bash", "linux", "aws", "gcp", "azure", "tailwind",
     "rest", "api", "apis", "vue", "angular", "typescript", "nextjs", "next.js",
     "mongodb", "mysql", "nosql", "sass", "bootstrap", "jquery", "graphql",
+    "html5", "css3", "react.js", "vue.js", "node.js", "express", "express.js",
+    "flask", "fastapi", "spring", "spring boot", "redis", "firebase",
     # Data Science / Analytics / ML
     "machine learning", "data science", "data analysis", "pandas", "numpy",
     "tensorflow", "pytorch", "nlp", "deep learning", "scikit-learn", "keras",
     "tableau", "power bi", "excel", "sheets", "matplotlib", "seaborn",
+    "statistics",
     # DevOps & Tools
     "devops", "kubernetes", "ci/cd", "jenkins", "ansible", "terraform",
     "vagrant", "nginx", "apache",
-    # Design, Marketing & Others
+    # UI/UX & Design
+    "figma", "adobe xd", "sketch", "invision", "zeplin",
+    "ui design", "ux design", "ui/ux", "ui/ux design", "ui", "ux",
+    "wireframing", "prototyping", "user research", "ux research",
+    "usability testing", "interaction design", "design thinking",
+    "information architecture", "user journey mapping", "personas",
+    "design systems", "responsive design", "mobile app design",
+    "website design", "dashboard design", "user experience design",
+    "web design", "app design", "product design",
+    # Graphics / Creative
+    "photoshop", "illustrator", "graphic design", "adobe illustrator",
+    "adobe photoshop", "canva", "coreldraw", "indesign",
+    # Digital Marketing
     "digital marketing", "marketing", "seo", "sem", "social media",
-    "content writing", "photoshop", "illustrator", "figma", "ui/ux", "ui",
-    "ux", "graphic design", "wordpress", "github", "gitlab",
-    "communication skills", "problem solving", "statistics",
-    "attention to detail"
+    "content writing", "content creation", "email marketing",
+    "google ads", "social media marketing",
+    # Other
+    "wordpress", "github", "gitlab",
+    "communication skills", "problem solving",
+    "attention to detail", "teamwork", "leadership",
+    "agile", "scrum", "agile/scrum", "project management",
+    "jira", "confluence",
 ])), key=len, reverse=True)  # Longest-first to prevent substring false matches
 
 
@@ -147,7 +166,9 @@ class SkillExperienceMatcher:
         job_skills    = SkillExperienceMatcher.parse_skill_requirements(job_text)
 
         if not job_skills:
-            return 1.0
+            # No known skills detected in job text — return neutral score
+            # rather than 1.0 (which inflated FAISS when job uses niche terms)
+            return 0.5
 
         overall_years = TextPreprocessor.extract_years(user_text)
 
@@ -181,4 +202,6 @@ class SkillExperienceMatcher:
                     matched_score += weight * 0.5                           # Skill matched, no years
             # Else: skill not found → score += 0.0
 
-        return matched_score / total_weight if total_weight > 0 else 1.0
+        # Fallback 0.5: neutral when total_weight somehow zero (shouldn't normally happen)
+        return matched_score / total_weight if total_weight > 0 else 0.5
+

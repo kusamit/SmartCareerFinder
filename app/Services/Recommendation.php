@@ -252,6 +252,27 @@ class Recommendation
      */
     public static function categorizeSkills(array $unmatchedSkills): array
     {
+        if (empty($unmatchedSkills)) {
+            return [];
+        }
+
+        try {
+            $scriptPath = escapeshellarg(base_path('python/recommend.py'));
+            $escapedSkills = array_map('escapeshellarg', array_values($unmatchedSkills));
+            $cmd = "python {$scriptPath} " . implode(' ', $escapedSkills);
+            $output = shell_exec($cmd);
+            
+            if ($output) {
+                $results = json_decode($output, true);
+                if (is_array($results) && !empty($results)) {
+                    return $results;
+                }
+            }
+        } catch (\Exception $e) {
+            // Fallback automatically
+        }
+
+        // --- FALLBACK (Deterministic Exact Matching) ---
         $categories = [];
 
         foreach ($unmatchedSkills as $skill) {

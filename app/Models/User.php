@@ -99,19 +99,27 @@ class User extends Model
     public function skillsArray(): array
     {
         $raw = $this->skills ?? '';
-        $raw = preg_replace('/<\/?(li|br|p)[^>]*>/i', ',', $raw);
+        $raw = preg_replace('/<\/?(li|br|p|h[1-6]|div|ul|ol)[^>]*>/i', ',', $raw);
         $raw = strip_tags($raw);
         $raw = html_entity_decode($raw, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-        return array_values(array_filter(array_map('trim', preg_split('/[,\n]+/', $raw))));
+        // Trim regular AND non-breaking spaces (\xc2\xa0 = UTF-8 encoding of char 160)
+        $trimNbsp = fn(string $s): string => trim($s, " \t\n\r\0\x0B\xc2\xa0");
+        // Replace non-breaking space sequences with a single real space inside strings
+        $raw = preg_replace('/[\xc2\xa0\s]+/', ' ', $raw);
+        return array_values(array_filter(array_map($trimNbsp, preg_split('/[,\n]+/', $raw))));
     }
 
     public function preferredRoleArray(): array
     {
         $raw = $this->preferred_role ?? '';
-        $raw = preg_replace('/<\/?(li|br|p)[^>]*>/i', ',', $raw);
+        $raw = preg_replace('/<\/?(li|br|p|h[1-6]|div|ul|ol)[^>]*>/i', ',', $raw);
         $raw = strip_tags($raw);
         $raw = html_entity_decode($raw, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-        return array_values(array_filter(array_map('trim', preg_split('/[,\n]+/', $raw))));
+        // Trim regular AND non-breaking spaces (\xc2\xa0 = UTF-8 encoding of char 160)
+        $trimNbsp = fn(string $s): string => trim($s, " \t\n\r\0\x0B\xc2\xa0");
+        // Replace non-breaking space sequences with a single real space inside strings
+        $raw = preg_replace('/[\xc2\xa0\s]+/', ' ', $raw);
+        return array_values(array_filter(array_map($trimNbsp, preg_split('/[,\n]+/', $raw))));
     }
 
     // Vector-based matching score against a job (0-100) using FAISS index
@@ -512,57 +520,122 @@ class User extends Model
         $parsed = [];
         foreach ($segments as $seg) {
             $segLower = strtolower($seg);
-            
+
             $years = 0;
             if (preg_match('/(\d+)\+?\s*(?:years?|yrs?|y\b)/i', $segLower, $m)) {
-                $years = (int) $m[1];
+                $years    = (int) $m[1];
                 $segClean = str_replace($m[0], ' ', $segLower);
             } else {
                 $segClean = $segLower;
             }
-            
+
             $segClean = preg_replace('/[•●▪\-*:]/', ' ', $segClean);
             $segClean = trim($segClean);
-            
+
             foreach ($knownSkills as $ks) {
                 if ($matchTerm($ks, $segClean)) {
                     $stdName = $ks;
                     if ($ks === "apis") $stdName = "api";
                     if (in_array($ks, ["github", "gitlab"])) $stdName = "git";
-                    
                     $parsed[$stdName] = max($parsed[$stdName] ?? 0, $years);
                 }
             }
         }
-        
+
         return $parsed;
     }
 
     public function matchDetails(Job $job, int $storedScore = 0): array
     {
-        // 1. Skills comparison using safe boundaries
-        $seekerSkills   = $this->skillsArray();
-        $jobSkills      = $job->skillsArray();
-        $matchedSkills  = [];
+        // ── Synonym groups ─────────────────────────────────────────────────────
+        // Skills in the same group are treated as equivalent during comparison.
+        // Add new rows here to expand coverage — keys are lowercased skill names.
+        $synonymGroups = [
+            // Research
+            ['user research', 'ux research', 'research', 'usability research'],
+            // Experience / UX
+            ['user experience', 'ux', 'ux design', 'user experience design', 'experience design'],
+            // Interface / UI
+            ['user interface', 'ui', 'ui design', 'interface design'],
+            // Web / Website
+            ['web design', 'website design', 'web designing'],
+            // Mobile / App
+            ['mobile app design', 'app design', 'mobile design', 'mobile application design', 'mobile ui'],
+            // Dashboard
+            ['dashboard design', 'dashboard ui', 'data dashboard'],
+            // Figma / Adobe XD (close tools — treat as equivalent for matching)
+            ['figma', 'figma design'],
+            ['adobe xd', 'xd', 'adobe experience design'],
+            // Frontend scripting
+            ['javascript', 'js', 'javascript (basic)', 'javascript (advanced)'],
+            ['react', 'react.js', 'reactjs', 'react js'],
+            ['node', 'node.js', 'nodejs', 'node js'],
+            ['vue', 'vue.js', 'vuejs'],
+            ['angular', 'angular.js', 'angularjs'],
+            // HTML / CSS variants
+            ['html', 'html5'],
+            ['css', 'css3', 'cascading style sheets'],
+            // Git variants
+            ['git', 'github', 'gitlab', 'version control'],
+            // API variants
+            ['api', 'apis', 'rest api', 'rest', 'restful api', 'restful'],
+            // Agile variants
+            ['agile', 'scrum', 'agile/scrum', 'agile methodology', 'scrum methodology'],
+            // SQL variants
+            ['sql', 'mysql', 'postgresql', 'database', 'relational database'],
+            // Design systems
+            ['design systems', 'design system', 'component library', 'component libraries'],
+            // Prototyping / Wireframing
+            ['wireframing', 'wireframe', 'wireframes'],
+            ['prototyping', 'prototype', 'prototypes'],
+            // Photoshop / Illustrator
+            ['photoshop', 'adobe photoshop', 'ps'],
+            ['illustrator', 'adobe illustrator', 'ai'],
+            // Responsive
+            ['responsive design', 'responsive web design', 'responsive'],
+            // PHP
+            ['php', 'php8', 'php 8', 'php7', 'php 7'],
+            // Python
+            ['python', 'python3', 'python 3'],
+        ];
+
+        // Build a flat map: lowercase skill → group index
+        $synonymMap = [];
+        foreach ($synonymGroups as $gid => $terms) {
+            foreach ($terms as $term) {
+                $synonymMap[mb_strtolower(trim($term))] = $gid;
+            }
+        }
+
+        // Returns synonym group ID or null if skill not in any group
+        $synGroup = fn(string $s): ?int => $synonymMap[mb_strtolower(trim($s))] ?? null;
+
+        // 1. Skills comparison using synonym groups + boundary-safe regex
+        $seekerSkills    = $this->skillsArray();
+        $jobSkills       = $job->skillsArray();
+        $matchedSkills   = [];
         $unmatchedSkills = [];
-        
-        $matchTerm = function ($term, $text) {
+
+        $matchTerm = function (string $term, string $text): bool {
             $escaped = preg_quote($term, '/');
-            $pattern = '/(?:^|[\s,.;:()\/\\-\\[\\]{}*])' . $escaped . '(?:$|[\s,.;:()\/\\-\\[\\]{}*])/i';
+            $pattern = '/(?:^|[\s,.;:()\\/\-\[\]{}*])' . $escaped . '(?:$|[\s,.;:()\\/\-\[\]{}*])/i';
             return (bool) preg_match($pattern, $text);
         };
-        
+
         foreach ($jobSkills as $js) {
             $found = false;
+            $stdJs = mb_strtolower(trim($js));
+            $jsGid = $synGroup($stdJs);
+
             foreach ($seekerSkills as $ss) {
-                $stdJs = mb_strtolower(trim($js));
                 $stdSs = mb_strtolower(trim($ss));
-                if ($stdJs === "apis") $stdJs = "api";
-                if ($stdSs === "apis") $stdSs = "api";
-                if (in_array($stdJs, ["github", "gitlab"])) $stdJs = "git";
-                if (in_array($stdSs, ["github", "gitlab"])) $stdSs = "git";
-                
+                $ssGid = $synGroup($stdSs);
+
+                // Synonym group match — same group means semantically equivalent
+                $synonymMatch = ($jsGid !== null && $ssGid !== null && $jsGid === $ssGid);
+
                 if ($stdJs === $stdSs 
+                    || $synonymMatch
                     || $matchTerm($stdJs, $ss) 
                     || $matchTerm($stdSs, $js)) {
                     $found = true; 
@@ -586,11 +659,19 @@ class User extends Model
                 $seekerYears = 0;
                 $usingFallback = false;
                 foreach ($seekerSkillExps as $ss => $sy) {
-                    if ($ss === $skill || $matchTerm($ss, $skill) || $matchTerm($skill, $ss)) {
+                    $ssGid = $synGroup($ss);
+                    $skillGid = $synGroup($skill);
+                    $synonymMatch = ($ssGid !== null && $skillGid !== null && $ssGid === $skillGid);
+
+                    if ($ss === $skill 
+                        || $synonymMatch
+                        || $matchTerm($ss, $skill) 
+                        || $matchTerm($skill, $ss)) {
                         $seekerYears = $sy;
                         break;
                     }
                 }
+
                 
                 // Fallback to overall experience years if skill-specific years not stated
                 if ($seekerYears == 0 && $seekerExp > 0) {

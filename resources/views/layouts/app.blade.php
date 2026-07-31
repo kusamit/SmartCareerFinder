@@ -275,7 +275,7 @@
         </div>
 
         {{-- Top: Matched / Unmatched score pills --}}
-        <div class="grid grid-cols-2 gap-4 mb-6">
+        <div class="grid grid-cols-2 gap-4 mb-6" id="matchScorePillsSection">
             <div class="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/30 rounded-2xl p-4 flex flex-col justify-center">
                 <div class="text-3xl font-extrabold text-emerald-600 dark:text-emerald-400 mono" id="modalScoreMatched">0%</div>
                 <div class="text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 mt-1">Final Match Score</div>
@@ -287,7 +287,7 @@
         </div>
 
         {{-- ===== SCORING BREAKDOWN TABLE ===== --}}
-        <div class="mb-6">
+        <div class="mb-6" id="scoreBreakdownSection">
             <div class="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3 pb-1 border-b border-slate-100">Scoring Breakdown (How the score is calculated)</div>
             <div id="scoreBreakdownRows">
                 {{-- Rows injected by JS --}}
@@ -321,15 +321,6 @@
             </div>
         </div>
 
-        {{-- ===== Recommendations Section ===== --}}
-        <div class="mt-6 pt-5 border-t border-slate-100 dark:border-slate-800" id="modalRecommendationsSection">
-            <div class="text-[11px] font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 border-b border-indigo-100 dark:border-indigo-900/40 pb-1 mb-3">
-                Recommended Course Domains & Skills
-            </div>
-            <div id="modalRecommendations" class="space-y-3">
-                {{-- Recommended courses will be injected here --}}
-            </div>
-        </div>
 
     </div>
 </div>
@@ -502,6 +493,16 @@
       document.getElementById('modalSub').innerText = data.job_title
           ? `Aligned with: ${data.job_title}` : 'Candidate & Job alignment';
 
+      // ── Display score breakdown and pills at all times ────────────────────
+      const breakdownBlock = document.getElementById('scoreBreakdownSection');
+      const scorePillsBlock = document.getElementById('matchScorePillsSection');
+      if (breakdownBlock) {
+          breakdownBlock.style.display = 'block';
+      }
+      if (scorePillsBlock) {
+          scorePillsBlock.style.display = 'grid';
+      }
+
       // ── Scoring Breakdown ─────────────────────────────────────────────────
       const c = data.composite || {};
       const faissW   = c.faiss_weighted  ?? 0;
@@ -598,27 +599,6 @@
       if (!unmatchedRows) unmatchedRows = `<span style="font-size:11px;color:#94a3b8;font-style:italic;">No gaps found</span>`;
       document.getElementById('modalUnmatchedRows').innerHTML = unmatchedRows;
 
-      // ── Recommendations ───────────────────────────────────────────────────
-      const recsSec = document.getElementById('modalRecommendationsSection');
-      const recsCont = document.getElementById('modalRecommendations');
-      if (data.unmatched_skills && data.unmatched_skills.length) {
-          recsSec.style.display = 'block';
-          const recs = getRecommendationsJS(data.unmatched_skills);
-          let html = '';
-          recs.forEach(r => {
-              const skillsList = r.skills.map(s => `<span style="display:inline-flex;padding:3px 10px;border-radius:8px;font-size:11px;font-weight:600;background:#eeebff;color:#4f46e5;border:1px solid #d5cdff;">${s}</span>`).join(' ');
-              html += `
-                  <div style="padding: 10px; border-radius: 12px; background: #f8fafc; border: 1px solid #f1f5f9; margin-bottom: 8px;">
-                      <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #94a3b8; letter-spacing: 0.05em; margin-bottom: 4px;">${r.category}</div>
-                      <div style="font-size: 13px; font-weight: 700; color: #0f172a; margin-bottom: 8px;">${r.course}</div>
-                      <div style="display: flex; flex-wrap: wrap; gap: 6px;">${skillsList}</div>
-                  </div>
-              `;
-          });
-          recsCont.innerHTML = html;
-      } else {
-          recsSec.style.display = 'none';
-      }
 
       // Show modal
       modal.classList.remove('opacity-0', 'pointer-events-none');
@@ -857,34 +837,100 @@
       }
   }
 
-  function getRecommendationsJS(unmatchedSkills) {
-      const categories = {};
-      unmatchedSkills.forEach(skill => {
-          const normalizedSkill = skill.toLowerCase().trim();
-          let matchedCategory = 'Other Professional Skills';
+  // ─── Role-based implicit skill sets ──────────────────────────────────────
+  // If a job title matches a known role, these are the skills practitioners
+  // in that role are expected to already know (even without explicitly listing them).
+  const ROLE_SKILL_CONTEXT = {
+      'frontend':    ['html', 'css', 'javascript', 'responsive design'],
+      'front-end':   ['html', 'css', 'javascript', 'responsive design'],
+      'backend':     ['php', 'python', 'sql', 'api', 'node'],
+      'back-end':    ['php', 'python', 'sql', 'api', 'node'],
+      'fullstack':   ['html', 'css', 'javascript', 'php', 'sql', 'api'],
+      'full stack':  ['html', 'css', 'javascript', 'php', 'sql', 'api'],
+      'ui/ux':       ['figma', 'wireframing', 'prototyping', 'user research'],
+      'ui ux':       ['figma', 'wireframing', 'prototyping', 'user research'],
+      'designer':    ['figma', 'adobe xd', 'photoshop', 'illustrator'],
+      'graphic':     ['photoshop', 'illustrator', 'canva', 'indesign'],
+      'data':        ['python', 'sql', 'excel', 'statistics', 'machine learning'],
+      'devops':      ['docker', 'linux', 'aws', 'ci/cd', 'kubernetes'],
+      'marketing':   ['seo', 'social media', 'content writing', 'google ads'],
+      'android':     ['java', 'kotlin', 'android'],
+      'ios':         ['swift', 'xcode', 'ios'],
+      'mobile':      ['react', 'flutter', 'android', 'ios'],
+  };
 
-          for (const [key, category] of Object.entries(skillToCategory)) {
-              if (normalizedSkill === key || normalizedSkill.includes(key) || key.includes(normalizedSkill)) {
-                  matchedCategory = category;
-                  break;
+  // ─── Role-based growth recommendations (shown when all skills already match) ─
+  const ROLE_GROWTH_RECS = {
+      'Frontend Developer':   { category: 'FRONTEND & WEB', skills: ['TypeScript', 'Next.js', 'Testing (Jest)', 'Web Accessibility', 'Performance Optimization'], course: 'Advanced Frontend Development Mastery' },
+      'Backend Developer':    { category: 'BACKEND & SYSTEMS', skills: ['System Design', 'Redis Caching', 'Microservices', 'API Security', 'GraphQL'], course: 'Backend Architecture & Scalability' },
+      'Full Stack Developer': { category: 'FULL STACK', skills: ['Docker', 'CI/CD', 'Testing', 'Cloud Deployment', 'System Design'], course: 'Full Stack Engineering Best Practices' },
+      'UI/UX Designer':       { category: 'DESIGN & UX', skills: ['Motion Design', 'Design Systems', 'Accessibility (WCAG)', 'User Testing', 'Figma Advanced'], course: 'Advanced UI/UX & Design Systems' },
+      'Graphic Designer':     { category: 'DESIGN & CREATIVE', skills: ['Motion Graphics', 'Brand Identity', 'Typography', 'Video Editing', '3D Design'], course: 'Creative Design & Visual Communication' },
+      'Data Scientist':       { category: 'DATA SCIENCE & ML', skills: ['Deep Learning', 'MLOps', 'Feature Engineering', 'Model Deployment', 'NLP'], course: 'Advanced Machine Learning & MLOps' },
+      'DevOps Engineer':      { category: 'DEVOPS & CLOUD', skills: ['Terraform', 'Kubernetes Advanced', 'Observability', 'Site Reliability', 'Security'], course: 'DevOps & Site Reliability Engineering' },
+      'Digital Marketing':    { category: 'MARKETING & GROWTH', skills: ['PPC Campaigns', 'Analytics', 'Conversion Optimization', 'Email Automation', 'SEO Advanced'], course: 'Digital Marketing & Growth Hacking' },
+  };
+
+  function getRecommendationsJS(unmatchedSkills, jobTitle) {
+      // If we have unmatched skills → categorise them and recommend courses to fill the gap
+      if (unmatchedSkills && unmatchedSkills.length > 0) {
+          const categories = {};
+          unmatchedSkills.forEach(skill => {
+              const normalizedSkill = skill.toLowerCase().trim();
+              let matchedCategory = 'Other Professional Skills';
+
+              for (const [key, category] of Object.entries(skillToCategory)) {
+                  if (normalizedSkill === key || normalizedSkill.includes(key) || key.includes(normalizedSkill)) {
+                      matchedCategory = category;
+                      break;
+                  }
+              }
+
+              if (!categories[matchedCategory]) {
+                  categories[matchedCategory] = [];
+              }
+              categories[matchedCategory].push(skill);
+          });
+
+          const result = [];
+          for (const [catName, skills] of Object.entries(categories)) {
+              result.push({
+                  category: catName,
+                  skills: skills,
+                  course: getRecommendedCourse(catName, skills)
+              });
+          }
+          return result;
+      }
+
+      // No unmatched skills → show role-based growth recommendations based on job title
+      if (jobTitle) {
+          const jobLower = jobTitle.toLowerCase();
+          // Try exact match first, then partial
+          for (const [roleKey, rec] of Object.entries(ROLE_GROWTH_RECS)) {
+              if (jobLower === roleKey.toLowerCase() || jobLower.includes(roleKey.toLowerCase().split(' ')[0])) {
+                  return [rec];
               }
           }
-
-          if (!categories[matchedCategory]) {
-              categories[matchedCategory] = [];
+          // Generic growth recommendation based on detected role keyword
+          for (const [keyword, skills] of Object.entries(ROLE_SKILL_CONTEXT)) {
+              if (jobLower.includes(keyword)) {
+                  return [{
+                      category: 'GROWTH & ADVANCEMENT',
+                      skills: skills.map(s => s.charAt(0).toUpperCase() + s.slice(1)),
+                      course: `Level Up: Advanced ${jobTitle} Skills`
+                  }];
+              }
           }
-          categories[matchedCategory].push(skill);
-      });
-
-      const result = [];
-      for (const [catName, skills] of Object.entries(categories)) {
-          result.push({
-              category: catName,
-              skills: skills,
-              course: getRecommendedCourse(catName, skills)
-          });
+          // Fallback: generic professional development
+          return [{
+              category: 'PROFESSIONAL DEVELOPMENT',
+              skills: ['Communication', 'Project Management', 'Agile/Scrum', 'Leadership', 'Problem Solving'],
+              course: `${jobTitle} — Professional Growth & Career Advancement`
+          }];
       }
-      return result;
+
+      return [];
   }
 
   let popoverPinned = false;
